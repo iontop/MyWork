@@ -1,0 +1,500 @@
+---
+title: "store_sales"
+author: "J.H AHN"
+date: '2021 12 14 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+gc()
+
+library(tidymodels)
+library(tidyverse)
+library(tsibble)
+library(feasts)
+library(fable)
+library(fabletools)
+library(lubridate)
+library(timetk)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import data
+
+```{r Import}
+raw_test <- read_csv("D:/RData/store_sales/test.csv")
+raw_train <- read_csv("D:/RData/store_sales/train.csv")
+raw_oil <- read_csv("D:/RData/store_sales/oil.csv")
+raw_holiday <- read_csv("D:/RData/store_sales/holidays_events.csv")
+raw_store <- read_csv("D:/RData/store_sales/stores.csv")
+raw_transactions <- read_csv("D:/RData/store_sales/transactions.csv")
+
+```
+
+
+## Merge data
+
+
+```{r}
+raw_test$set <- "test"
+raw_train$set <- "train"
+
+raw_full <- 
+    bind_rows(raw_test, raw_train)
+
+# c(nrow(raw_train), nrow(raw_test), nrow(raw_full))
+
+raw_full %>% head()
+
+```
+
+
+
+```{r merge_holiday}
+simple_holiday <- 
+    raw_holiday %>% 
+    select(date, type, transferred)
+
+nrow(simple_holiday)
+
+# removed duplicated rows
+simple_holiday <- 
+    simple_holiday %>% distinct(date, .keep_all = TRUE)
+
+nrow(simple_holiday)
+
+simple_holiday <- simple_holiday %>% 
+    filter_by_time(.date_var = date,
+                   .start_date = min(raw_full$date), 
+                   .end_date = max(raw_full$date)) %>% 
+    mutate(working = case_when(type == "Holiday"&transferred == "FALSE" ~ 0,
+                               type %in% c("Transfer", "Additional","Event") ~ 0,
+                               TRUE ~ 1)
+    )
+
+nrow(raw_full)
+
+raw_full <-
+    raw_full %>%
+    left_join(simple_holiday, by = 'date')
+
+nrow(raw_full)
+
+raw_full$working <- if_else(is.na(raw_full$working), 0, raw_full$working)
+
+
+raw_full <- raw_full %>% select(-c(type, transferred))
+
+
+```
+
+
+
+
+
+```{r}
+# raw_full %>% 
+#     filter_by_time(.date_var = date, 
+#                    .start_date = "2014-01-01", 
+#                    .end_date = "2016-12-31") %>% 
+#     summarise_by_time(.date_var = date,
+#                       .by = "month",
+#                       monthly_sales = sum(sales)/10^6,
+#                       year = year(date),
+#                       month = month(date)) %>% 
+#     ggplot(aes(month, monthly_sales)) +
+#     geom_col(fill = '#191970') +
+#     facet_wrap(~year, ncol = 1) +
+#     scale_x_continuous(breaks = seq(1,12,1))
+    
+
+
+```
+
+
+
+
+## Merge oil_price
+
+
+```{r}
+# raw_oil %>% 
+#     ggplot(aes(date, dcoilwtico)) + 
+#     geom_line() + 
+#     scale_x_date(date_labels = "%y\n%m/%d")
+
+
+
+```
+
+
+```{r}
+# raw_oil$date <- as.POSIXct(raw_oil$date, format = "%Y-%m-%d")
+
+oil_tsbl <- as_tsibble(raw_oil, index = date, regular = TRUE)
+
+fit_oilprice <- 
+    oil_tsbl %>% 
+    fill_gaps(.full = TRUE) %>%
+    model(naive = NAIVE(dcoilwtico),
+          randomwalk = RW(dcoilwtico ~ drift())
+          )
+
+
+
+# augment(fit_oilprice) %>% 
+#     ggplot(aes(x = date, color = .model)) +
+#     geom_line(aes(y = dcoilwtico), color = "#000000", lty = 1, size = 1.2) +
+#     geom_line(aes(y = .fitted), lty = 2)
+
+
+
+```
+
+
+```{r}
+# oil_tsbl %>% 
+#     fill_gaps(.full = TRUE) %>%
+#     model(naive = NAIVE(dcoilwtico)) %>% 
+#     gg_tsresiduals()
+# 
+# oil_tsbl %>% 
+#     fill_gaps(.full = TRUE) %>%
+#     model(naive = NAIVE(dcoilwtico)) %>% 
+#     augment() %>% 
+#     features(.innov, box_pierce, lag = 10, dof = 0)
+# 
+# oil_tsbl %>% 
+#     fill_gaps(.full = TRUE) %>%
+#     model(naive = NAIVE(dcoilwtico)) %>% 
+#     augment() %>% 
+#     features(.innov, ljung_box, lag = 10, dof = 0)
+
+```
+
+
+```{r}
+# oil_tsbl %>% 
+#     fill_gaps(.full = TRUE) %>%
+#     model(randomwalk = RW(dcoilwtico ~ drift())) %>% 
+#     gg_tsresiduals()
+# 
+# oil_tsbl %>% 
+#     fill_gaps(.full = TRUE) %>%
+#     model(randomwalk = RW(dcoilwtico ~ drift())) %>% 
+#     augment() %>% 
+#     features(.innov, box_pierce, lag = 10, dof = 0)
+# 
+# oil_tsbl %>% 
+#     fill_gaps(.full = TRUE) %>%
+#     model(randomwalk = RW(dcoilwtico ~ drift())) %>% 
+#     augment() %>% 
+#     features(.innov, ljung_box, lag = 10, dof = 0)
+
+```
+
+
+```{r}
+fitted_oil <- 
+    fit_oilprice %>% 
+    augment() %>% 
+    filter(.model == "naive") %>% 
+    select(c(date, dcoilwtico, .fitted))
+
+
+```
+
+
+
+```{r}
+fitted_oil <- 
+    fitted_oil %>% 
+    mutate(dcoilwtico = case_when(is.na(dcoilwtico) ~ .fitted,
+                                  TRUE ~ fitted_oil$dcoilwtico))
+
+fitted_oil$dcoilwtico[1] <- fitted_oil$dcoilwtico[2]
+
+fitted_oil <- 
+    fitted_oil %>% 
+    rename(oil_price = dcoilwtico) %>% 
+    select(-.fitted)
+```
+
+
+
+
+```{r}
+nrow(raw_full)
+
+raw_full <- 
+    raw_full %>% 
+    left_join(fitted_oil, by = 'date')
+
+nrow(raw_full)
+
+```
+
+
+
+
+### Correlation between oil price and sales
+
+```{r}
+# raw_full %>% 
+#     summarise_by_time(.date_var = date,
+#                       .by = 'week',
+#                       weekly_sales = sum(sales)/10^4,
+#                       oil_price) %>% 
+#     ggplot(aes(date, weekly_sales)) +
+#     geom_line() + 
+#     geom_line(aes(y = oil_price), lty = 2, color = "#B80000") +
+#     scale_x_date(date_labels = "%y-%m")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+# raw_full %>% 
+#     summarise_by_time(.date_var = date,
+#                       .by = 'day',
+#                       daily_sales = sum(sales) / 10^2,
+#                       promotion_tot = sum(onpromotion)) %>% 
+#     ggplot(aes(date, daily_sales)) +
+#     geom_line() +
+#     geom_line(aes(y=promotion_tot), lty=2, color = "#B80000")
+
+
+```
+
+
+
+```{r}
+# raw_full %>% 
+#     summarise_by_time(.date_var = date,
+#                       .by = 'day',
+#                       daily_sales = sum(sales),
+#                       oil_price = )
+
+
+```
+
+
+
+
+```{r explore_store_data}
+# raw_store %>% filter(city == "Quito" & type == "D")
+# 
+# raw_store %>% 
+#     ggplot(aes(state, fill = type)) + 
+#     geom_histogram(stat = "count") + 
+#     theme(axis.text.x = element_text(angle = 45))
+
+
+```
+
+
+
+
+
+```{r merge_transaction}
+
+raw_transactions <- 
+    raw_transactions %>% 
+    left_join(raw_store, by = 'store_nbr')
+
+raw_transactions %>% head()
+
+```
+
+
+
+```{r}
+# raw_transactions %>% 
+#     group_by(store_nbr) %>% 
+#     ggplot(aes(x = date, y = transactions, fill = type)) +
+#     geom_col()
+
+
+```
+
+```{r}
+# raw_transactions %>% 
+#     group_by(store_nbr) %>% 
+#     ggplot(aes(x = date, y = transactions, fill = state)) +
+#     geom_col()
+
+
+```
+
+
+```{r}
+# raw_transactions %>% 
+#     group_by(store_nbr) %>% 
+#     ggplot(aes(x = date, y = transactions, fill = as.factor(store_nbr))) +
+#     geom_col()
+
+
+```
+
+```{r}
+# raw_transactions %>% 
+#     ggplot(aes(x = type, y = transactions, fill = state)) +
+#     geom_col()
+
+```
+```{r}
+# raw_transactions %>% 
+#     filter(state == "Pichincha") %>% 
+#     count(type, city) %>% 
+#     arrange(desc(n))
+
+```
+
+
+```{r}
+# raw_transactions %>% 
+#     filter(state == "Guayas") %>% 
+#     count(type, city) %>% 
+#     arrange(desc(n))
+
+```
+
+
+
+
+
+
+```{r}
+# raw_transactions %>% 
+#     summarise_by_time(.date_var = date,
+#                       .by = 'week',
+#                       weekly_tran = sum(transactions),
+#                       year = year(date)
+#                       ) %>% 
+#     ggplot(aes(date, weekly_tran)) +
+#     geom_line() +
+#     facet_wrap(~ year, scales = "free_x", ncol = 2) +
+#     scale_x_date(date_labels = "%m", date_breaks = "1 month")
+
+
+```
+
+
+
+```{r}
+nrow(raw_full)
+
+raw_full <- 
+    raw_full %>% 
+    mutate(join_idx = paste0(date,"_",store_nbr))
+
+raw_transactions <- 
+    raw_transactions %>% 
+    mutate(join_idx = paste0(date,"_",store_nbr))
+
+raw_full <- 
+    raw_full %>% 
+    left_join(raw_transactions, 
+              by = "join_idx") %>% 
+    select(-c('date.y', 'store_nbr.y', 'city', 'state', 'cluster', 'join_idx')) %>% 
+    rename(store_nbr = store_nbr.x,
+           date = date.x)
+
+nrow(raw_full)
+
+```
+
+```{r}
+ # raw_full %>% filter(year(date) == "2014"&family == "BEVERAGES") %>% 
+ #    ggplot(aes(store_nbr, sales, fill = type)) +
+ #    geom_col()
+
+
+```
+
+
+
+```{r prepare_modeling}
+library(modeltime)
+
+df_test <- raw_full %>% filter(set == "test")
+df_train <- raw_full %>% filter(set =="train")
+
+c(nrow(df_test), nrow(df_train), nrow(raw_full))
+
+df_test <- df_test %>% select(-set)
+df_train <- df_train %>% select(-set)
+
+
+```
+```{r split_data}
+df_split <- initial_time_split(df_train, prop = 1/10)
+df_analysis <- training(df_split)
+df_assess <- testing(df_split)
+
+```
+
+```{r set_model}
+arima_spec <- 
+    arima_reg() %>% 
+    set_engine("auto_arima")
+
+
+```
+
+```{r fit_model}
+doParallel::registerDoParallel()
+
+arima_fit <-
+    arima_spec %>% 
+    fit(sales ~ date, data = df_analysis)
+    # fit(sales ~ date + store_nbr + family + onpromotion + working + oil_price + transactions + type, 
+    #     data = df_analysis)
+
+
+```
+
+
+```{r}
+calib_fit <- 
+    arima_fit %>% 
+    modeltime_calibrate(new_data = df_assess)
+
+
+```
+
+```{r}
+pred <- 
+    calib_fit %>% modeltime_forecast(new_data = df_test)
+
+
+
+```
+
+
+```{r}
+plot_modeltime_forecast(pred)
+```
+
+
