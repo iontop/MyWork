@@ -1,0 +1,201 @@
+---
+title: "Cocktail_recipes"
+author: "Sean Ahn"
+date: '2021 12 23 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidymodels)
+library(tidyverse)
+
+```
+
+## Import data
+
+```{r import_data}
+
+boston_cocktails <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-26/boston_cocktails.csv")
+
+# 데이터 확인을 위해 콘솔창에서 ingredient를 확인
+boston_cocktails %>% count(ingredient, sort = TRUE)
+
+# 확인해 보면 
+# juice, Juice와 같이 같은 단어인데 대소문자가 다르게 들어간 경우가 발견
+# Apricot-Flavored, Apricot Flavored와 같이 하이픈(-)이 있고 없는 경우가 발견
+# Maraschino liqueur, Maraschino와 같이 같은 재료인데 liqueur등으로 단어가 더 붙은 경우가 발견
+# Light cream, Light cream (if required)
+
+
+boston_cocktails %>%
+  count(ingredient, sort = TRUE)
+```
+
+## Explore the data
+
+
+
+make the cleaned version
+```{r cleaned_version}
+cocktails_parsed <- 
+  boston_cocktails %>% 
+  mutate(ingredient = str_to_lower(ingredient),
+         ingredient = str_replace_all(ingredient,"-"," "),
+         ingredient = str_remove(ingredient," liqueur"),
+         ingredient = case_when(str_detect(ingredient, "bitters") ~ "bitters",
+                                str_detect(ingredient, "orange") ~ "orange juice",
+                                str_detect(ingredient, "lemon") ~ "lemon juice",
+                                str_detect(ingredient, "lime") ~ "lime juice",
+                                str_detect(ingredient, "grapefruit") ~ "grapefruit juice",
+                                TRUE ~ ingredient), 
+         measure = case_when(str_detect(ingredient, "bitters") ~ str_replace(measure, "oz$", "dash"),
+                             TRUE ~ measure),
+         measure = str_replace(measure, " ?1/2",".5"),
+         measure = str_replace(measure, " ?3/4",".75"),
+         measure = str_replace(measure, " ?1/4",".25"),
+         measure = str_replace(measure, " ?1/2",".5 "), # ?1/2 앞에 한 칸 띄어야 함
+         measure_number = parse_number(measure),
+         measure_number = if_else(str_detect(measure, "dash$"),
+                                  measure_number / 50,
+                                  measure_number)) %>% 
+  add_count(ingredient) %>%   # ingredient count를 보여주는 column 생성
+  filter(n > 15) %>%          # ingredient count > 15 이상만 남기고,
+  select(-n) %>%              # 만들었던 n column 삭제
+  distinct(row_id, ingredient, .keep_all = TRUE) %>%  # distinct() - Select only unique/distinct rows from a data frame
+  na.omit()
+
+cocktails_parsed
+
+```
+
+
+```{r}
+cocktails_df <- 
+  cocktails_parsed %>% 
+  select(-ingredient_number, -row_id, -measure) %>% 
+  pivot_wider(names_from = ingredient, values_from = measure_number, values_fill = 0) %>% 
+  janitor::clean_names() %>% 
+  na.omit() # parsing에 실패한 20개 항목을 삭제하기 위함
+
+```
+
+
+
+## Principal component analysis
+
+cocktails_df는 937x42 Dataset으로 42개 차원이 존재한다. 
+이를 모두 표현할 수 없기 때문에 Dimension reduction이 필요
+
+```{r}
+pca_rec <- 
+  recipe(~ ., data = cocktails_df) %>%   # unsupervised model이기 때문에 outcome 없이 ~표시만 함
+  update_role(name, category, new_role = "id") %>% 
+  step_normalize(all_predictors()) %>% 
+  step_pca(all_predictors())
+
+pca_prep <- prep(pca_rec)
+
+```
+
+
+```{r}
+tidied_pca <- tidy(pca_prep, 2) # 1과 2중 하나만 입력, 1을 입력하면 statistic, value가 출력되고
+                                # 2를 입력하면 value, component가 출력됨
+
+tidied_pca %>% 
+  filter(component %in% paste0("PC", 1:5)) %>% 
+  mutate(component = fct_inorder(component)) %>% 
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ component, nrow = 1)
+
+
+
+```
+
+
+```{r}
+library(tidytext)
+
+tidied_pca %>% 
+  filter(component %in% paste0("PC", 1:4)) %>%
+  group_by(component) %>% 
+  top_n(8, abs(value)) %>% 
+  ungroup() %>% 
+  mutate(terms = reorder_within(terms, abs(value), component)) %>% 
+  ggplot(aes(abs(value), terms, fill = value > 0)) +
+  geom_col() +
+  facet_wrap(~ component, scales = "free_y") + # y-axis에 없었던 값을 처리하는 목적
+  scale_y_reordered() +
+  labs(y = NULL, fill = "Positive?")
+
+
+```
+
+
+```{r}
+juice(pca_prep) %>% 
+  ggplot(aes(PC1, PC2, label = name)) +
+  geom_point(aes(color = category), alpha = 0.5, size = 2) +
+  geom_text(check_overlap = TRUE, hjust = "inward") + # check_overlap = TRUE로 두면 글자가 겹치지 않게 출력
+  labs(color = NULL)
+
+```
+
+
+
+
+
+
+## UMAP
+
+```{r}
+library(embed)
+
+umap_rec <- 
+  recipe(~ ., data = cocktails_df) %>%   # unsupervised model이기 때문에 outcome 없이 ~표시만 함
+  update_role(name, category, new_role = "id") %>% 
+  step_normalize(all_predictors()) %>% 
+  step_umap(all_predictors())
+
+umap_prep <- prep(umap_rec)
+
+```
+
+
+```{r}
+juice(umap_prep) %>% 
+  ggplot(aes(UMAP1, UMAP2, label = name)) +
+  geom_point(aes(color = category), alpha = 0.5, size = 2) +
+  geom_text(check_overlap = TRUE, hjust = "inward") + # check_overlap = TRUE로 두면 글자가 겹치지 않게 출력
+  labs(color = NULL)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
