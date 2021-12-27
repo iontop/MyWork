@@ -34,22 +34,58 @@ raw_transactions <- read_csv("D:/R_DATA/store-sales-time-series-forecasting/tran
 ```
 
 
-## Merge data
+## binding raw files
 
-
-```{r}
+```{r bind_train_test_csv}
 raw_test$set <- "test"
 raw_train$set <- "train"
 
 raw_full <- 
-    bind_rows(raw_test, raw_train)
+  bind_rows(raw_test, raw_train)
 
 # c(nrow(raw_train), nrow(raw_test), nrow(raw_full))
 
-raw_full %>% head()
+```
+
+
+## recode family
+
+
+```{r}
+raw_full$family <- 
+  raw_full$family %>% recode(
+    AUTOMOTIVE = 'AUTO',                 
+    `BABY CARE` = 'BABY',                
+    BEVERAGES = 'BEVER',                 
+    `BREAD/BAKERY` = 'BREAD',             
+    CELEBRATION = 'CELEB',               
+    CLEANING = 'CLEAN',                 
+    `FROZEN FOODS`= 'FOOD',           
+    `GROCERY I` = 'GROC1',                 
+    `GROCERY II` = 'GROC2',                
+    HARDWARE = 'HW',                 
+    `HOME AND KITCHEN I` = 'HOME1',         
+    `HOME AND KITCHEN II` = 'HOME2',       
+    `HOME APPLIANCES` = 'APPLI',          
+    `HOME CARE` = 'CARE',                  
+    LADIESWEAR = 'LADIES',                
+    `LAWN AND GARDEN` = 'GARDEN',           
+    LINGERIE = 'LINGER',                   
+    `LIQUOR,WINE,BEER` = 'LIQR',           
+    MAGAZINES = 'MAGAZ',                
+    `PERSONAL CARE` = 'PERCA',              
+    `PET SUPPLIES` = 'PET',              
+    `PLAYERS AND ELECTRONICS` = 'ELECT',   
+    POULTRY  = 'POULT',                  
+    `PREPARED FOODS` = 'PREFD',            
+    `SCHOOL AND OFFICE SUPPLIES` = 'SCHOOL'
+  )
+
 
 ```
 
+
+## Merge data
 
 
 ```{r merge_earth_quake}
@@ -201,9 +237,6 @@ raw_full$transactions <-
 
 
 
-## Preprocessing & feature engineering
-
-
 ### change column properties
 
 ```{r change_column_properties}
@@ -236,21 +269,23 @@ raw_full$week <- week(raw_full$date)
 ### generate lag column
 
 ```{r generate_lag_column}
-raw_full <- 
-  raw_full %>% group_by(store_nbr, family) %>% 
-  mutate(lag1 = dplyr::lag(sales, n=1, default = NA)) %>% 
-  ungroup()
+# raw_full <- 
+#   raw_full %>% group_by(store_nbr, family) %>% 
+#   mutate(lag1 = dplyr::lag(sales, n=1, default = NA)) %>% 
+#   ungroup()
+# 
+# raw_full <- 
+#   raw_full %>% group_by(store_nbr, family) %>% 
+#   mutate(lag7 = dplyr::lag(sales, n=7, default = NA)) %>% 
+#   ungroup()
+# 
+# raw_full <- 
+#   raw_full %>% group_by(store_nbr, family) %>% 
+#   mutate(lag14 = dplyr::lag(sales, n=14, default = NA)) %>% 
+#   ungroup()
 
-raw_full <- 
-  raw_full %>% group_by(store_nbr, family) %>% 
-  mutate(lag7 = dplyr::lag(sales, n=7, default = NA)) %>% 
-  ungroup()
-
-raw_full <- 
-  raw_full %>% group_by(store_nbr, family) %>% 
-  mutate(lag14 = dplyr::lag(sales, n=14, default = NA)) %>% 
-  ungroup()
 ```
+
 
 
 ### generate ratio column
@@ -267,20 +302,103 @@ raw_full$daily_transactions <- raw_full$transactions
 
 raw_full <- 
   raw_full %>% 
-  mutate(transactions = round(daily_transactions * ratio_sales,3))
+  mutate(transactions = case_when(daily_transactions > 0 ~ round(daily_transactions * ratio_sales,3),
+                                  TRUE ~ 0))
 ```
 
 
 
+```{r}
+df <- raw_full %>% 
+  group_by(store_nbr, family)
+
+df_set <- df %>% group_split()
+
+```
 
 
+```{r}
+df_train <- df_set[[90]] %>% filter(set == "train")
+df_test <- df_set[[90]] %>% filter(set == "test")
+
+df_split <- initial_split(df_train)
+df_analysis <- training(df_split)
+df_assess <- testing(df_split)
+
+set.seed(123)
+df_folds <- bootstraps(df_analysis)
+
+```
 
 
+```{r}
+rf_spec <- 
+  rand_forest(mtry = tune(), trees = 1000, min_n = tune()) %>% 
+  set_engine("ranger") %>% 
+  set_mode("regression")
+
+library(rules)
+cu_spec <- 
+  cubist_rules(committees = tune(), neighbors = tune()) %>% 
+  set_engine("Cubist")
 
 
+```
 
 
+```{r}
+rf_rec <- 
+  recipe(sales ~ ., data = df_analysis) %>% 
+  update_role(c(id, store_nbr, family, set, daily_sales, 
+                ratio_sales, daily_transactions), 
+              new_role = "id") %>% 
+  step_lag(sales, lag = c(1,7,14), default = 0) %>% 
+  step_dummy(all_nominal_predictors())
+
+```
 
 
+```{r}
+rf_wf <- 
+  workflow() %>% 
+  add_model(rf_spec) %>% 
+  add_recipe(rf_rec)
 
+
+```
+
+
+```{r}
+rf_res <- 
+  rf_wf %>% 
+  tune_grid(
+    resample = df_folds,
+    control = control_grid(verbose = TRUE, save_pred = TRUE)
+  )
+
+```
+
+```{r}
+final_wf <- 
+  rf_wf %>% 
+  finalize_workflow(select_best(rf_res, metric = "rmse"))
+
+```
+
+```{r}
+rf_fit <-
+  final_wf %>% 
+  last_fit(df_split)
+
+final_fit <- 
+  fit(rf_fit$.workflow[[1]], df_train)
+
+```
+
+```{r}
+predict(final_fit, new_data = df_test)
+
+#sales를 기준으로 lag하도록 recipe에 줬는데 df_test에는 sales값을 찾아야 하는 것이라 에러 발생생
+
+```
 
