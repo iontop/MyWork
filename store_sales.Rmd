@@ -144,11 +144,9 @@ oil_tsbl <- as_tsibble(raw_oil, index = date, regular = TRUE)
 fit_oilprice <- 
   oil_tsbl %>% 
   fill_gaps(.full = TRUE) %>%
-  model(naive = NAIVE(dcoilwtico),
-        randomwalk = RW(dcoilwtico ~ drift())
-  )
+  model(randomwalk = RW(dcoilwtico ~ drift()))
 
-# pick Naive model
+
 fitted_oil <- 
   fit_oilprice %>% 
   augment() %>% 
@@ -204,6 +202,7 @@ fit_trs <-
   tsbl_trs %>% 
   model(base = ETS(transactions))
 
+# estimate daily transaction using ETS
 fcast_trs <- 
   fit_trs %>% 
   forecast(h = "15 days")
@@ -232,6 +231,15 @@ raw_full <-
 
 raw_full$transactions <-
   if_else(is.na(raw_full$transactions), 0, raw_full$transactions)
+
+```
+
+
+```{r}
+full_trs %>% filter(date > as.Date("2017-08-01"), store_nbr < 10) %>% 
+  ggplot(aes(date, transactions, color = as.factor(store_nbr))) + geom_line() +
+  facet_wrap(~ store_nbr, scales = "free_y", ncol = 3)
+
 
 ```
 
@@ -296,7 +304,8 @@ raw_full <-
   raw_full %>% group_by(date, store_nbr) %>%
   mutate(daily_sales = sum(sales)) %>% 
   ungroup() %>% 
-  mutate(ratio_sales = round(sales / daily_sales, 5))
+  mutate(ratio_sales = case_when(daily_sales > 0  ~ round(sales / daily_sales, 5),
+                                 TRUE ~ 0))
 
 raw_full$daily_transactions <- raw_full$transactions
 
@@ -304,13 +313,15 @@ raw_full <-
   raw_full %>% 
   mutate(transactions = case_when(daily_transactions > 0 ~ round(daily_transactions * ratio_sales,3),
                                   TRUE ~ 0))
+
 ```
+
 
 
 
 ```{r}
 df <- raw_full %>% 
-  group_by(store_nbr, family)
+  group_by(store_nbr)
 
 df_set <- df %>% group_split()
 
@@ -318,15 +329,16 @@ df_set <- df %>% group_split()
 
 
 ```{r}
-df_train <- df_set[[90]] %>% filter(set == "train")
-df_test <- df_set[[90]] %>% filter(set == "test")
+df_train <- df_set[[5]] %>% filter(set == "train")
+df_test <- df_set[[5]] %>% filter(set == "test")
 
 df_split <- initial_split(df_train)
 df_analysis <- training(df_split)
 df_assess <- testing(df_split)
 
 set.seed(123)
-df_folds <- bootstraps(df_analysis)
+df_folds <- vfold_cv(df_analysis, v = 5)
+
 
 ```
 
@@ -336,11 +348,6 @@ rf_spec <-
   rand_forest(mtry = tune(), trees = 1000, min_n = tune()) %>% 
   set_engine("ranger") %>% 
   set_mode("regression")
-
-library(rules)
-cu_spec <- 
-  cubist_rules(committees = tune(), neighbors = tune()) %>% 
-  set_engine("Cubist")
 
 
 ```
@@ -352,7 +359,10 @@ rf_rec <-
   update_role(c(id, store_nbr, family, set, daily_sales, 
                 ratio_sales, daily_transactions), 
               new_role = "id") %>% 
-  step_lag(sales, lag = c(1,7,14), default = 0) %>% 
+  step_impute_knn(transactions, 
+                  impute_with = imp_vars(c(store_nbr, family, onpromotion, earthquake, oil_price,
+                                           year, month, day, wday, week))) %>% 
+  # step_lag(sales, lag = c(1,7,14), default = 0) %>% 
   step_dummy(all_nominal_predictors())
 
 ```
@@ -369,12 +379,24 @@ rf_wf <-
 
 
 ```{r}
+library(finetune)
+
 rf_res <- 
   rf_wf %>% 
-  tune_grid(
-    resample = df_folds,
-    control = control_grid(verbose = TRUE, save_pred = TRUE)
+  tune_race_anova(
+    resamples = df_folds,
+    grid = 25,
+    control = control_race(verbose = TRUE)
   )
+
+
+# rf_res <- 
+#   rf_wf %>% 
+#   tune_grid(
+#     resample = df_folds,
+#     grid = 5,
+#     control = control_grid(verbose = TRUE, save_pred = TRUE)
+#   )
 
 ```
 
@@ -396,9 +418,14 @@ final_fit <-
 ```
 
 ```{r}
-predict(final_fit, new_data = df_test)
+submit <- 
+  predict(final_fit, new_data = df_test) %>% 
+  bind_cols(df_test$id)
 
-#sales를 기준으로 lag하도록 recipe에 줬는데 df_test에는 sales값을 찾아야 하는 것이라 에러 발생생
+names(submit) <- c("sales", "id")
+
+submit <- 
+  submit %>% select(id, everything())
 
 ```
 
