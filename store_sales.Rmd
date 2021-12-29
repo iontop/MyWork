@@ -19,6 +19,8 @@ library(lubridate)
 library(timetk)
 
 knitr::opts_chunk$set(echo = TRUE)
+options(tidymodels.dark = TRUE)
+
 ```
 
 ## Import data
@@ -251,10 +253,10 @@ full_trs %>% filter(date > as.Date("2017-08-01"), store_nbr < 10) %>%
 raw_full <- 
   raw_full %>% select(-c(city, state))
 
-raw_full$store_nbr <- as.factor(raw_full$store_nbr)
-raw_full$family <- as.factor(raw_full$family)
-raw_full$earthquake <- as.factor(raw_full$earthquake)
-raw_full$working <- as.factor(raw_full$working)
+raw_full$store_nbr <- as.numeric(raw_full$store_nbr)
+# raw_full$family <- as.numeric(raw_full$family)
+raw_full$earthquake <- as.numeric(raw_full$earthquake)
+raw_full$working <- as.numeric(raw_full$working)
 
 ```
 
@@ -317,115 +319,135 @@ raw_full <-
 ```
 
 
+### split the data set by store_nbr and family
 
 
-```{r}
-df <- raw_full %>% 
-  group_by(store_nbr)
+```{r group_split_data}
+
+df <- raw_full %>%
+  group_by(store_nbr, family)
 
 df_set <- df %>% group_split()
 
 ```
 
 
-```{r}
-df_train <- df_set[[5]] %>% filter(set == "train")
-df_test <- df_set[[5]] %>% filter(set == "test")
 
-df_split <- initial_split(df_train)
-df_analysis <- training(df_split)
-df_assess <- testing(df_split)
 
-set.seed(123)
-df_folds <- vfold_cv(df_analysis, v = 5)
+```{r for_loop}
 
+library(finetune) # to using racing method
+library(tictoc)   # to print timestamp
+
+getPrediction <- function(i) {
+  # split data
+  df_train <- df_set[[i]] %>% filter(set == "train")
+  df_test <- df_set[[i]] %>% filter(set == "test")
+  
+  df_split <- initial_split(df_train)
+  df_analysis <- training(df_split)
+  df_assess <- testing(df_split)
+  
+  set.seed(123)
+  df_folds <- vfold_cv(df_analysis, v = 5)
+  
+  
+  # set the models
+  rf_spec <-
+    rand_forest() %>%
+    set_engine("ranger") %>%
+    set_mode("regression")
+  
+  mars_spec <- 
+    mars() %>% 
+    set_engine("earth") %>% 
+    set_mode("regression")
+  
+  xgb_spec <- 
+    boost_tree() %>% 
+    set_engine("xgboost") %>% 
+    set_mode("regression")
+  
+  # recipe
+  base_rec <- 
+    recipe(sales ~ ., data = df_analysis) %>% 
+    update_role(c(id, date, store_nbr, family, set, daily_sales, ratio_sales), 
+                new_role = "id") %>% 
+    step_impute_knn(all_predictors()) %>%
+    step_zv(all_numeric_predictors())
+  
+  # set workflow
+  base_wf <- 
+    workflow() %>% 
+    add_model(xgb_spec) %>% 
+    add_recipe(base_rec) 
+  
+  
+  # parameter tune and get results
+  tic()
+  base_res <- 
+    base_wf %>% 
+    fit_resamples(
+      resamples = df_folds,
+      control = control_resamples(verbose = TRUE)
+    )
+  toc()
+  
+ 
+  # finalize workflow using best result
+  final_wf <- 
+    base_wf %>% 
+    finalize_workflow(select_best(base_res, metric = "rmse"))
+  
+  
+  # trained fit
+  base_fit <-
+    final_wf %>% 
+    last_fit(df_split)
+  
+  # get final fit
+  final_fit <- 
+    fit(base_fit$.workflow[[1]], df_train)
+  
+  submit <- 
+    predict(final_fit, new_data = df_test) %>% 
+    bind_cols(df_test)
+  
+  submit <- 
+    submit %>% select(id, everything()) %>% arrange(id)
+  
+  return(submit)
+  
+}
 
 ```
 
 
-```{r}
-rf_spec <- 
-  rand_forest(mtry = tune(), trees = 1000, min_n = tune()) %>% 
-  set_engine("ranger") %>% 
-  set_mode("regression")
 
+```{r}
+submission_list = list()
+
+for(i in 1:1782) {
+  
+  submission_list[[i]] <- getPrediction(i)
+  
+}
+
+submission <- do.call(rbind, lapply(submission_list, function(x) as.data.frame(x[1:5])))
+
+submission <- 
+  submission %>% 
+  mutate(.pred = case_when(.pred < 0.01 ~ 0, TRUE ~ .pred)) %>% 
+  mutate(.pred = round(.pred, digits = 3)) %>% 
+  arrange(id)
 
 ```
 
 
-```{r}
-rf_rec <- 
-  recipe(sales ~ ., data = df_analysis) %>% 
-  update_role(c(id, store_nbr, family, set, daily_sales, 
-                ratio_sales, daily_transactions), 
-              new_role = "id") %>% 
-  step_impute_knn(transactions, 
-                  impute_with = imp_vars(c(store_nbr, family, onpromotion, earthquake, oil_price,
-                                           year, month, day, wday, week))) %>% 
-  # step_lag(sales, lag = c(1,7,14), default = 0) %>% 
-  step_dummy(all_nominal_predictors())
-
-```
-
 
 ```{r}
-rf_wf <- 
-  workflow() %>% 
-  add_model(rf_spec) %>% 
-  add_recipe(rf_rec)
+# write.csv(submit, file = "submission.csv")
 
-
-```
-
-
-```{r}
-library(finetune)
-
-rf_res <- 
-  rf_wf %>% 
-  tune_race_anova(
-    resamples = df_folds,
-    grid = 25,
-    control = control_race(verbose = TRUE)
-  )
-
-
-# rf_res <- 
-#   rf_wf %>% 
-#   tune_grid(
-#     resample = df_folds,
-#     grid = 5,
-#     control = control_grid(verbose = TRUE, save_pred = TRUE)
-#   )
-
-```
-
-```{r}
-final_wf <- 
-  rf_wf %>% 
-  finalize_workflow(select_best(rf_res, metric = "rmse"))
-
-```
-
-```{r}
-rf_fit <-
-  final_wf %>% 
-  last_fit(df_split)
-
-final_fit <- 
-  fit(rf_fit$.workflow[[1]], df_train)
-
-```
-
-```{r}
-submit <- 
-  predict(final_fit, new_data = df_test) %>% 
-  bind_cols(df_test$id)
-
-names(submit) <- c("sales", "id")
-
-submit <- 
-  submit %>% select(id, everything())
 
 ```
 
