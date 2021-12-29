@@ -446,7 +446,11 @@ submission <-
 
 
 ```{r}
-# write.csv(submit, file = "submission.csv")
+submission <- submission %>% select(id, .pred)
+
+names(submission) <- c("id", "sales")
+
+write.csv(submission, file = "submission.csv")
 
 
 ```
