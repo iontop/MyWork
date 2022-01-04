@@ -1,0 +1,458 @@
+---
+title: "store_sales_v1"
+author: "J.H AHN"
+date: '2021 12 20 '
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+rm(list = ls())
+gc()
+
+
+library(tidymodels)
+library(tidyverse)
+library(tsibble)
+library(feasts)
+library(fable)
+library(fabletools)
+library(lubridate)
+library(timetk)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Import data
+
+```{r Import}
+raw_test <- read_csv("D:/RData/store_sales/test.csv")
+raw_train <- read_csv("D:/RData/store_sales/train.csv")
+raw_oil <- read_csv("D:/RData/store_sales/oil.csv")
+raw_holiday <- read_csv("D:/RData/store_sales/holidays_events.csv")
+raw_store <- read_csv("D:/RData/store_sales/stores.csv")
+raw_transactions <- read_csv("D:/RData/store_sales/transactions.csv")
+
+```
+
+
+## Merge data
+
+```{r}
+raw_test$set <- "test"
+raw_train$set <- "train"
+
+raw_full <- 
+    bind_rows(raw_test, raw_train)
+
+# c(nrow(raw_train), nrow(raw_test), nrow(raw_full))
+
+raw_full %>% head()
+
+```
+
+
+
+
+```{r generate_earthquake}
+raw_full$earthquake <-
+    if_else(raw_full$date >= as.Date("2014-08-12") &
+                raw_full$date <= as.Date("2014-08-16"), 1, 0)
+
+```
+
+
+
+```{r merge_holiday}
+simple_holiday <- 
+    raw_holiday %>% 
+    select(date, type, transferred)
+
+nrow(simple_holiday) # for checking, delete later
+
+# removed duplicated rows
+simple_holiday <- 
+    simple_holiday %>% distinct(date, .keep_all = TRUE)
+
+nrow(simple_holiday) # for checking, delete later
+
+simple_holiday <- simple_holiday %>% 
+    filter_by_time(.date_var = date,
+                   .start_date = min(raw_full$date), 
+                   .end_date = max(raw_full$date)) %>% 
+    mutate(working = case_when(type == "Holiday"&transferred == "FALSE" ~ 0,
+                               type %in% c("Transfer", "Additional","Event") ~ 0,
+                               TRUE ~ 1)
+    )
+
+nrow(raw_full)
+
+raw_full <-
+    raw_full %>%
+    left_join(simple_holiday, by = 'date')
+
+nrow(raw_full)
+
+raw_full$working <- if_else(is.na(raw_full$working), 0, raw_full$working)
+
+
+raw_full <- raw_full %>% select(-c(type, transferred))
+
+
+```
+
+
+
+```{r merge_oilprice}
+oil_tsbl <- as_tsibble(raw_oil, index = date, regular = TRUE)
+
+fit_oilprice <- 
+    oil_tsbl %>% 
+    fill_gaps(.full = TRUE) %>%
+    model(naive = NAIVE(dcoilwtico),
+          randomwalk = RW(dcoilwtico ~ drift())
+          )
+
+# pick Naive model
+ fitted_oil <- 
+    fit_oilprice %>% 
+    augment() %>% 
+    filter(.model == "randomwalk") %>% 
+    select(c(date, dcoilwtico, .fitted))
+
+
+fitted_oil <- 
+    fitted_oil %>% 
+    mutate(dcoilwtico = case_when(is.na(dcoilwtico) ~ .fitted,
+                                  TRUE ~ fitted_oil$dcoilwtico))
+
+fitted_oil$dcoilwtico[1] <- fitted_oil$dcoilwtico[2]
+
+fitted_oil <- 
+    fitted_oil %>% 
+    rename(oil_price = dcoilwtico) %>% 
+    select(-.fitted)
+
+nrow(raw_full) # for checking, delete later
+
+raw_full <- 
+    raw_full %>% 
+    left_join(fitted_oil, by = 'date')
+
+nrow(raw_full) # for checking, delete later
+
+```
+
+```{r}
+raw_trs <- 
+    raw_transactions %>% 
+    left_join(raw_store, by = 'store_nbr')
+
+```
+
+
+
+```{r estimate_future_transaction_1}
+tsbl_trs <- 
+    raw_trs %>% 
+    select(date, transactions, store_nbr, state, city) %>% 
+    as_tsibble(index = date, key = c(store_nbr, state, city))
+
+
+tsbl_trs <- 
+    tsbl_trs %>% fill_gaps()
+
+tsbl_trs$transactions <- 
+    if_else(is.na(tsbl_trs$transactions), 0, tsbl_trs$transactions)
+
+
+fit_trs <- 
+    tsbl_trs %>% 
+    model(base = ETS(transactions))
+
+
+```
+
+```{r}
+# fit_trs %>% augment()
+# 
+# fit_trs %>% augment() %>% ACF(.innov)
+
+```
+
+
+```{r estimate_future_transaction_2}
+fcast_trs <- 
+    fit_trs %>% 
+    forecast(h = "15 days")
+
+fcast_trs
+
+```
+
+
+
+
+
+```{r estimate_future_transaction_3}
+fitted_trs <- 
+    as.data.frame(fcast_trs) %>% 
+    select(-c(.model, transactions)) %>% 
+    rename(transactions = .mean)
+
+fitted_trs
+
+```
+
+
+
+
+```{r merge_transaction}
+
+nrow(raw_full) # for checking, delete later
+
+raw_full <- 
+    raw_full %>% 
+    left_join(raw_store %>% select('store_nbr', 'city', 'state'),
+              by = 'store_nbr')
+
+hist_trs <- 
+    raw_trs %>% tibble() %>% 
+    select(-c(type, cluster))
+
+full_trs <- 
+    bind_rows(hist_trs, fitted_trs)
+
+raw_full <- 
+    raw_full %>% 
+    left_join(full_trs, by = c('date', 'store_nbr', 'city', 'state')) %>% 
+    select(-ends_with('.x'))
+
+raw_full$transactions <-
+    if_else(is.na(raw_full$transactions), 0, raw_full$transactions)
+
+
+nrow(raw_full) # for checking, delete later
+
+```
+
+## Prepocessing done!!!
+
+
+
+
+
+
+## feature engineering
+
+```{r column_trm}
+raw_full <- 
+    raw_full %>% select(-c(city, state))
+
+raw_full$store_nbr <- as.factor(raw_full$store_nbr)
+raw_full$family <- as.factor(raw_full$family)
+raw_full$earthquake <- as.factor(raw_full$earthquake)
+raw_full$working <- as.factor(raw_full$working)
+
+```
+
+
+```{r decompose_date}
+raw_full$year <- year(raw_full$date)
+raw_full$month <- month(raw_full$date)
+raw_full$day <- day(raw_full$date)
+raw_full$wday <- wday(raw_full$date)
+raw_full$week <- week(raw_full$date)
+
+```
+
+
+```{r lag_data}
+raw_full <- 
+    raw_full %>% group_by(store_nbr, family) %>% 
+    mutate(lag1 = dplyr::lag(sales, n=1, default = NA)) %>% 
+    ungroup()
+
+raw_full <- 
+    raw_full %>% group_by(store_nbr, family) %>% 
+    mutate(lag7 = dplyr::lag(sales, n=7, default = NA)) %>% 
+    ungroup()
+
+raw_full <- 
+    raw_full %>% group_by(store_nbr, family) %>% 
+    mutate(lag14 = dplyr::lag(sales, n=14, default = NA)) %>% 
+    ungroup()
+
+
+# raw_full %>% group_by(store_nbr, family) %>%
+#     filter(year(date)==2014&month(date)==12) %>%
+#     slice(1:1000) %>% view()
+
+
+```
+
+
+```{r ratio_data}
+raw_full <- 
+    raw_full %>% group_by(date, store_nbr) %>%
+    mutate(daily_sales = sum(sales)) %>% 
+    ungroup() %>% 
+    mutate(ratio_sales = round(sales / daily_sales, 5))
+
+raw_full$daily_transactions <- raw_full$transactions
+
+raw_full <- 
+    raw_full %>% 
+    mutate(transactions = round(daily_transactions * ratio_sales,3))
+
+
+# raw_full %>% group_by(date) %>%
+#     filter(year(date)==2014&month(date)==12) %>%
+#     slice(1:1000) %>% view()
+# 
+# raw_full %>% filter(date == as.Date("2014-12-01")&store_nbr == 1) %>% 
+#     select(ratio_sales) %>% sum()
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r prepare_modeling}
+df_test <- raw_full %>% filter(set == "test")
+df_train <- raw_full %>% filter(set =="train")
+
+c(nrow(df_test), nrow(df_train), nrow(raw_full))
+
+df_test <- df_test %>% select(-set)
+df_train <- df_train %>% select(-set)
+
+```
+
+```{r}
+df_train <- df_train %>% filter(id <= 3000887 & id >= 2990196)
+
+```
+
+
+
+```{r split_data}
+df_split <- initial_time_split(df_train, prop = 1/10)
+df_analysis <- training(df_split)
+df_assess <- testing(df_split)
+
+df_split
+
+```
+
+```{r resampler}
+set.seed(111)
+
+df_folds <- bootstraps(df_analysis, times = 2)
+
+```
+
+
+```{r recipe}
+df_rec <- 
+    recipe(sales ~., data = df_analysis) %>% 
+    update_role(c(id, date, daily_sales, ratio_sales, daily_transactions), new_role = "id") %>% 
+    step_dummy(all_nominal_predictors())
+
+```
+
+
+
+```{r model}
+
+library(rules)
+cubist_spec <- 
+    cubist_rules(committees = tune(), neighbors = tune()) %>% 
+    set_engine("Cubist")
+
+```
+
+
+```{r workflow_set}
+df_wf <- 
+    workflow() %>% 
+    add_recipe(df_rec) %>% 
+    add_model(cubist_spec)
+
+
+```
+
+
+```{r run_model}
+
+doParallel::registerDoParallel()
+
+ini_res <- 
+    df_wf %>% 
+    tune_grid(
+        resamples = df_folds,
+        grid = 2,
+        control = control_grid(verbose = TRUE, save_pred = TRUE)
+    )
+
+```
+
+
+
+```{r select_parameter}
+best_param <- 
+    ini_res %>% 
+    select_best(metric = "rmse")
+    
+
+```
+
+
+```{r finalize_workflow}
+final_fit <- 
+    df_wf %>% 
+    finalize_workflow(best_param) %>% 
+    last_fit(df_split)
+
+```
+
+
+
+```{r final_model}
+final_mod <- 
+    fit(final_fit$.workflow[[1]], df_train)
+
+```
+
+
+
+```{r predict}
+submission <- 
+    predict(final_mod, new_data = df_test) %>% 
+    bind_cols("id" = df_test$id)
+
+```
+
+
+```{r print_submission}
+submission <- submission %>% select(id, everything())
+names(submission) <- c("id", "sales")
+write_csv(submission, file = "submission.csv")
+
+```
+
+
+
+
+
+

@@ -1,0 +1,430 @@
+---
+title: "store_sales_v1"
+author: "J.H AHN"
+date: '2021 12 20 '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+gc()
+
+library(tidymodels)
+library(tidyverse)
+library(tsibble)
+library(feasts)
+library(fable)
+library(fabletools)
+library(lubridate)
+library(timetk)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import data
+
+```{r Import}
+raw_test <- read_csv("D:/RData/store_sales/test.csv")
+raw_train <- read_csv("D:/RData/store_sales/train.csv")
+raw_oil <- read_csv("D:/RData/store_sales/oil.csv")
+raw_holiday <- read_csv("D:/RData/store_sales/holidays_events.csv")
+raw_store <- read_csv("D:/RData/store_sales/stores.csv")
+raw_transactions <- read_csv("D:/RData/store_sales/transactions.csv")
+
+```
+
+
+```{r}
+raw_test <- 
+    raw_test %>% 
+    as_tsibble(index = date, key = c(id, store_nbr, family, onpromotion)) %>% 
+    fill_gaps()
+
+raw_train <- 
+    raw_train %>% 
+    as_tsibble(index = date, key = c(id, store_nbr, family, sales, onpromotion)) %>% 
+    fill_gaps()
+
+
+```
+
+
+
+## Merge data
+
+```{r}
+raw_test$set <- "test"
+raw_train$set <- "train"
+
+raw_full <- 
+    bind_rows(raw_test, raw_train)
+
+# c(nrow(raw_train), nrow(raw_test), nrow(raw_full))
+
+raw_full %>% head()
+
+```
+
+
+
+
+```{r generate_earthquake}
+raw_full$earthquake <-
+    if_else(raw_full$date >= as.Date("2014-08-12") &
+                raw_full$date <= as.Date("2014-08-16"), 1, 0)
+
+```
+
+
+
+```{r merge_holiday}
+simple_holiday <- 
+    raw_holiday %>% 
+    select(date, type, transferred)
+
+nrow(simple_holiday) # for checking, delete later
+
+# removed duplicated rows
+simple_holiday <- 
+    simple_holiday %>% distinct(date, .keep_all = TRUE)
+
+nrow(simple_holiday) # for checking, delete later
+
+simple_holiday <- simple_holiday %>% 
+    filter_by_time(.date_var = date,
+                   .start_date = min(raw_full$date), 
+                   .end_date = max(raw_full$date)) %>% 
+    mutate(working = case_when(type == "Holiday"&transferred == "FALSE" ~ 0,
+                               type %in% c("Transfer", "Additional","Event") ~ 0,
+                               TRUE ~ 1)
+    )
+
+nrow(raw_full)
+
+raw_full <-
+    raw_full %>%
+    left_join(simple_holiday, by = 'date')
+
+nrow(raw_full)
+
+raw_full$working <- if_else(is.na(raw_full$working), 0, raw_full$working)
+
+
+raw_full <- raw_full %>% select(-c(type, transferred))
+
+
+```
+
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+```{r merge_oilprice}
+oil_tsbl <- as_tsibble(raw_oil, index = date, regular = TRUE)
+
+fit_oilprice <- 
+    oil_tsbl %>% 
+    fill_gaps(.full = TRUE) %>%
+    model(naive = NAIVE(dcoilwtico),
+          randomwalk = RW(dcoilwtico ~ drift())
+          )
+
+# compare RMSE
+accuracy(fit_oilprice)
+
+
+# pick Naive model
+ fitted_oil <- 
+    fit_oilprice %>% 
+    augment() %>% 
+    filter(.model == "randomwalk") %>% 
+    select(c(date, dcoilwtico, .fitted))
+
+
+fitted_oil <- 
+    fitted_oil %>% 
+    mutate(dcoilwtico = case_when(is.na(dcoilwtico) ~ .fitted,
+                                  TRUE ~ fitted_oil$dcoilwtico))
+
+fitted_oil$dcoilwtico[1] <- fitted_oil$dcoilwtico[2]
+
+fitted_oil <- 
+    fitted_oil %>% 
+    rename(oil_price = dcoilwtico) %>% 
+    select(-.fitted)
+
+nrow(raw_full) # for checking, delete later
+
+raw_full <- 
+    raw_full %>% 
+    left_join(fitted_oil, by = 'date')
+
+nrow(raw_full) # for checking, delete later
+
+```
+
+```{r}
+raw_trs <- 
+    raw_transactions %>% 
+    left_join(raw_store, by = 'store_nbr')
+
+```
+
+
+Earthquake dose not seem transaction over state.
+
+```{r plot_transaction_state}
+# raw_trs %>% 
+#     ggplot(aes(date, transactions, color = as.factor(state))) +
+#     geom_line()+
+#     geom_vline(xintercept = as.Date("2014-08-12")) +
+#     facet_wrap(~store_nbr, ncol = 5, scales = "free_y")
+
+
+```
+
+
+```{r estimate_future_transaction_1}
+tsbl_trs <- 
+    raw_trs %>% 
+    select(date, transactions, store_nbr, state, city) %>% 
+    as_tsibble(index = date, key = c(store_nbr, state, city))
+
+
+tsbl_trs <- 
+    tsbl_trs %>% fill_gaps()
+
+tsbl_trs$transactions <- 
+    if_else(is.na(tsbl_trs$transactions), 0, tsbl_trs$transactions)
+
+
+fit_trs <- 
+    tsbl_trs %>% 
+    model(base = ETS(transactions))
+
+report(fit_trs)
+
+```
+```{r}
+# fit_trs %>% augment()
+# 
+# fit_trs %>% augment() %>% ACF(.innov)
+
+```
+
+
+```{r estimate_future_transaction_2}
+fcast_trs <- 
+    fit_trs %>% 
+    forecast(h = "15 days")
+
+fcast_trs
+
+```
+
+
+
+
+
+```{r}
+# agg_trs <- 
+#     tsbl_trs %>% 
+#     aggregate_key(state / city, transactions = sum(transactions))
+
+
+```
+
+
+```{r}
+# agg_trs %>% 
+#     filter(is_aggregated(city)) %>% 
+#     autoplot(transactions) + 
+#     facet_wrap(vars(state), ncol = 3, scales = "free_y") +
+#     theme(legend.position = "bottom")
+
+
+```
+
+
+```{r}
+# agg_trs %>% 
+#     filter(is_aggregated(city))
+
+
+```
+
+
+```{r}
+# fit_trs <- 
+#     agg_trs %>% filter(is_aggregated(city)) %>% 
+#     model(base = ETS(transactions))
+# 
+# report(fit_trs)
+
+```
+
+
+```{r}
+# fcast_trs <- 
+#     fit_trs %>% 
+#     forecast(h = "15 days")
+# 
+# fcast_trs
+
+```
+
+
+```{r}
+# fcast_trs %>% 
+#     autoplot(agg_trs %>% filter(year(date) >= 2017), level = NULL) +
+#     facet_wrap(vars(state), ncol = 3, scales = "free_y") +
+#     scale_x_date(date_breaks = "week", date_labels = "%m-%d") +
+#     theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+```{r estimate_future_transaction_3}
+fitted_trs <- 
+    as.data.frame(fcast_trs) %>% 
+    select(-c(.model, transactions)) %>% 
+    rename(transactions = .mean)
+
+fitted_trs
+
+```
+
+
+
+
+```{r merge_transaction}
+
+nrow(raw_full) # for checking, delete later
+
+raw_full <- 
+    raw_full %>% 
+    left_join(raw_store %>% select('store_nbr', 'city', 'state'),
+              by = 'store_nbr')
+
+hist_trs <- 
+    raw_trs %>% tibble() %>% 
+    select(-c(type, cluster))
+
+full_trs <- 
+    bind_rows(hist_trs, fitted_trs)
+
+raw_full <- 
+    raw_full %>% 
+    left_join(full_trs, by = c('date', 'store_nbr', 'city', 'state')) %>% 
+    select(-ends_with('.x'))
+
+raw_full$transactions <-
+    if_else(is.na(raw_full$transactions), 0, raw_full$transactions)
+
+
+nrow(raw_full) # for checking, delete later
+
+```
+
+
+
+
+
+
+
+
+
+
+## Prepocessing doen!!!
+
+```{r rearrange}
+ts_full <- 
+    raw_full %>% 
+    select(-c(city, state))
+
+```
+
+
+```{r split_data}
+
+ts_test <- ts_full %>% filter(set == "test")
+ts_train <- ts_full %>% filter(set =="train")
+
+c(nrow(ts_test), nrow(ts_train), nrow(ts_full))
+
+ts_test <- ts_test %>% select(-set)
+ts_train <- ts_train %>% select(-set)
+    
+```
+
+```{r}
+split <- floor(nrow(ts_train) * 0.9)
+end_n <- nrow(ts_train)
+
+ts_analysis <- ts_train[1:split,]
+ts_assess <- ts_train[(split+1):end_n,]
+
+
+```
+
+
+
+
+```{r aggregate}
+ts_agg <- 
+    ts_analysis %>% 
+    aggregate_key(store_nbr / family, 
+                  onpromotion = sum(onpromotion),
+                  sales= sum(sales),
+                  earthquake = max(earthquake),
+                  working = max(working),
+                  oil_price = mean(oil_price),
+                  transactions = mean(transactions))
+
+```
+
+
+
+```{r}
+ts_fit <- 
+    ts_agg %>% 
+    filter(year(date) >= 2017) %>% 
+    model(ets = ETS(sales)) %>% 
+    reconcile(td = top_down(ets))
+
+accuracy(ts_fit$ets[[1]])
+
+accuracy(ts_fit$td[[1]])
+
+```
+
+
+```{r}
+ts_forecast <- 
+    ts_fit %>% 
+    forecast(h = "15 days")
+
+```
+
+
+```{r}
+ts_forecast %>% 
+    accuracy(ts_agg %>% filter(year(date) >= 2017))
+
+
+```
+
+
+
+
+
+
+
