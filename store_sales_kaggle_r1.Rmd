@@ -162,6 +162,19 @@ raw_full <-
 
 ```
 
+```{r}
+eval_oil_tsbl <- oil_tsbl %>% filter(date >= as.Date("2017-08-01"))
+eval_fitted_oil <- fitted_oil %>% filter(date >= as.Date("2017-08-01"))
+
+ggplot() +
+  geom_point(data = eval_oil_tsbl, aes(date, dcoilwtico), color = "#ff8c00", size = 2) +
+  geom_point(data = eval_fitted_oil, aes(date, oil_price), color = "#8B0000", size = 1) +
+  geom_line(data = eval_fitted_oil, aes(date, oil_price), color = "#8B0000") +
+  scale_x_date(breaks = date_breaks("day"), labels = date_format("%m\n%d"))
+
+```
+
+
 
 
 ## merge transaction
@@ -188,9 +201,9 @@ tsbl_trs$transactions <-
 
 fit_trs <- 
   tsbl_trs %>% 
-  model(base = ETS(transactions))
+  model(base = SNAIVE(transactions ~ lag("1 year")))
 
-# estimate daily transaction using ETS
+# estimate daily transaction using SNAIVE
 fcast_trs <- 
   fit_trs %>% 
   forecast(h = "15 days")
@@ -224,13 +237,37 @@ raw_full$transactions <-
 
 
 ```{r}
-full_trs %>% filter(date > as.Date("2017-08-01"), store_nbr < 10) %>% 
-  ggplot(aes(date, transactions, color = as.factor(store_nbr))) + geom_line() +
-  facet_wrap(~ store_nbr, scales = "free_y", ncol = 3)
+eval_hist_trs <- hist_trs %>% filter(date >= as.Date("2017-03-01"), store_nbr == 24)
+eval_fitted_trs <- fitted_trs %>% filter(store_nbr == 24)
+
+ggplot()+
+  geom_line(data = eval_hist_trs, aes(date, transactions), color = "#191970") +
+  geom_line(data = eval_fitted_trs, aes(date, transactions), color = "#8B0000") +
+  scale_x_date(labels = date_format("%B"), breaks = date_breaks("1 month"))
 
 
 ```
 
+
+
+
+```{r}
+full_trs %>% filter(date > as.Date("2017-05-01"), store_nbr > 0, store_nbr < 7) %>% 
+  ggplot(aes(date, transactions, color = as.factor(store_nbr))) + geom_line() +
+  facet_wrap(~ store_nbr, scales = "free_y", ncol = 2)
+
+
+```
+
+
+```{r}
+full_trs %>% filter(date > as.Date("2017-05-01"), store_nbr > 8, store_nbr < 15) %>% 
+  ggplot(aes(date, transactions, color = as.factor(store_nbr))) + geom_line() +
+  facet_wrap(~ store_nbr, scales = "free_y", ncol = 2)+
+  scale_x_date(breaks = date_breaks("1 month"), labels = date_format("%B"))
+
+
+```
 
 
 ### change column properties
@@ -265,20 +302,20 @@ raw_full$week <- week(raw_full$date)
 ### generate lag column
 
 ```{r generate_lag_column}
-raw_full <-
-  raw_full %>% group_by(store_nbr, family) %>%
-  mutate(lag1 = dplyr::lag(sales, n=1, default = NA)) %>%
-  ungroup()
-
-raw_full <-
-  raw_full %>% group_by(store_nbr, family) %>%
-  mutate(lag7 = dplyr::lag(sales, n=7, default = NA)) %>%
-  ungroup()
-
-raw_full <-
-  raw_full %>% group_by(store_nbr, family) %>%
-  mutate(lag14 = dplyr::lag(sales, n=14, default = NA)) %>%
-  ungroup()
+# raw_full <- 
+#   raw_full %>% group_by(store_nbr, family) %>% 
+#   mutate(lag1 = dplyr::lag(sales, n=1, default = NA)) %>% 
+#   ungroup()
+# 
+# raw_full <- 
+#   raw_full %>% group_by(store_nbr, family) %>% 
+#   mutate(lag7 = dplyr::lag(sales, n=7, default = NA)) %>% 
+#   ungroup()
+# 
+# raw_full <- 
+#   raw_full %>% group_by(store_nbr, family) %>% 
+#   mutate(lag14 = dplyr::lag(sales, n=14, default = NA)) %>% 
+#   ungroup()
 
 ```
 
@@ -310,35 +347,104 @@ raw_full <-
 
 ```{r group_split_data}
 
-df <- raw_full %>% filter(raw_full$date >= as.Date("2017-08-01"))
+df <- raw_full %>%
+  group_by(store_nbr, family)
 
+df_set <- df %>% group_split()
 
 ```
 
 
 
-
-```{r for_loop}
-library(tictoc)   # to print timestamp
-
+```{r}
 # split data
-df_train <- df %>% filter(set == "train")
-df_test <- df %>% filter(set == "test")
+df_train <- df_set[[31]] %>% filter(set == "train")
+df_test <- df_set[[31]] %>% filter(set == "test")
 
 df_split <- initial_time_split(df_train)
 df_analysis <- training(df_split)
 df_assess <- testing(df_split)
 
-# set the models
-xgb_spec <- 
-  boost_tree() %>% 
-  set_engine("xgboost") %>% 
-  set_mode("regression")
+```
 
+
+```{r}
+ggplot() +
+  geom_line(data = df_analysis, aes(date, sales), color = "#191970") +
+  geom_line(data = df_assess, aes(date, sales), color = "#8B0000")
+
+```
+
+```{r}
+df_slice <- 
+  df_analysis %>% 
+  rolling_origin(initial = 728, assess = 30, cumulative = TRUE,
+                 skip = 30, lag = 0)
+
+```
+
+
+```{r}
+slice_check <- list()
+
+chk_date <- function(n){
+slice_check <- c(
+                 df_slice$splits[[n]] %>% analysis() %>% select(date) %>% head(1) %>% pull(),
+                 df_slice$splits[[n]] %>% analysis() %>% select(date) %>% tail(1) %>% pull(),
+                 df_slice$splits[[n]] %>% assessment() %>% select(date) %>% head(1) %>% pull(),
+                 df_slice$splits[[n]] %>% assessment() %>% select(date) %>% tail(1) %>% pull()
+)
+}
+
+ for(i in 1:nrow(df_slice)) {
+   slice_check[[i]] <- chk_date(i)
+ }
+ 
+ 
+chk_res <- t(as.data.frame(slice_check, row.names = NULL)) %>% tibble()
+
+chk_res
+
+```
+
+```{r}
+# set model specification (no need preprocessing)
+cart_spec <- 
+   decision_tree(cost_complexity = tune(), min_n = tune()) %>% 
+   set_engine("rpart") %>% 
+   set_mode("regression")
+
+library(baguette)
+bag_cart_spec <- 
+   bag_tree() %>% 
+   set_engine("rpart", times = 50L) %>% 
+   set_mode("regression")
+
+rf_spec <- 
+   rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
+   set_engine("ranger") %>% 
+   set_mode("regression")
+
+xgb_spec <- 
+   boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
+              min_n = tune(), sample_size = tune(), trees = tune()) %>% 
+   set_engine("xgboost") %>% 
+   set_mode("regression")
+
+library(rules)
+cubist_spec <- 
+   cubist_rules(committees = tune(), neighbors = tune()) %>% 
+   set_engine("Cubist") 
+  
+
+```
+
+
+```{r}
 # recipe
 base_rec <- 
   recipe(sales ~ ., data = df_analysis) %>% 
-  update_role(c(id, date, set, daily_sales, ratio_sales), 
+  update_role(c(id, date, store_nbr, family, set, transactions, daily_sales, ratio_sales), 
               new_role = "id") %>% 
   step_impute_knn(all_predictors()) %>%
   step_zv(all_numeric_predictors())
@@ -347,33 +453,217 @@ base_rec <-
 base_wf <- 
   workflow() %>% 
   add_model(xgb_spec) %>% 
-  add_recipe(base_rec) %>% 
-  fit(df_analysis)
+  add_recipe(base_rec) 
+
+```
 
 
+```{r}
+library(tictoc)
+doParallel::registerDoParallel()
+
+tic()
+set.seed(234)
+base_res <- 
+  base_wf %>% 
+  tune_grid(
+    resamples = df_slice,
+    grid = 5,
+    metrics = metric_set(rmse),
+    control = control_grid(verbose = TRUE, save_pred = FALSE, save_workflow = FALSE)
+  )
+toc()
+
+```
+
+```{r}
+# finalize workflow using best result
+final_wf <- 
+  base_wf %>% 
+  finalize_workflow(select_best(base_res, metric = "rmse"))
+
+
+```
+
+
+```{r}
 # trained fit
 base_fit <-
-  base_wf %>% 
+  final_wf %>% 
   last_fit(df_split)
-  
+
+ext_wf <- 
+  extract_workflow(base_fit)
+
+```
+
+```{r}
+# get final fit
+final_fit <- 
+  fit(ext_wf, df_train)
+
+```
+
+```{r}
+pred <- 
+  predict(final_fit, new_data = df_assess) %>%
+  bind_cols(df_assess)
+
+pred %>% rmse(sales, .pred)
+pred %>% rsq(sales, .pred)
+
+```
+
+
+```{r}
+pred %>% 
+  ggplot(aes(sales, .pred)) +
+  geom_jitter(alpha = 0.5, color = "#191970") +
+  geom_abline()+
+  coord_obs_pred()
+
+```
+
+
+```{r}
+submit <- 
+  predict(final_fit, new_data = df_test) %>% 
+  bind_cols(df_test) %>% 
+  mutate(sales = .pred)
+
+```
+
+
+```{r}
+test_pred <- 
+  submit %>% select(-.pred) %>% 
+  arrange(date)
 
 
 ```
 
 ```{r}
-  # get final fit
-  final_fit <-
-    fit(base_fit$.workflow[[1]], df_train)
-
-  submit <-
-    predict(final_fit, new_data = df_test) %>%
-    bind_cols(df_test)
-
-  submit <-
-    submit %>% select(id, everything()) %>% arrange(id)
+train_eval <- df_train %>% filter(date >= as.Date("2017-01-01"))
 
 
 ```
+
+```{r}
+ggplot() +
+  geom_line(data = train_eval, aes(date, sales), color = "#191970") +
+  geom_line(data = test_pred, aes(date, sales), color = "#8B0000") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%B")
+
+```
+
+
+```{r for_loop}
+
+getPrediction <- function(i) {
+  # split data
+  df_train <- df_set[[i]] %>% filter(set == "train")
+  df_test <- df_set[[i]] %>% filter(set == "test")
+  
+  df_split <- initial_split(df_train)
+  df_analysis <- training(df_split)
+  df_assess <- testing(df_split)
+  
+  # ROLLING FORECASTING ORIGIN RESAMPLING   
+  df_slice <- 
+    df_analysis %>% 
+    rolling_origin(initial = 728, assess = 30, cumulative = TRUE,
+                   skip = 30, lag = 0)
+  
+  
+  # set the models
+  xgb_spec <- 
+    boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
+               min_n = tune(), sample_size = tune(), trees = tune()) %>% 
+    set_engine("xgboost") %>% 
+    set_mode("regression")
+  
+  # recipe
+  base_rec <- 
+    recipe(sales ~ ., data = df_analysis) %>% 
+    update_role(c(id, date, store_nbr, family, set, transactions, daily_sales, ratio_sales), 
+                new_role = "id") %>% 
+    step_impute_knn(all_predictors()) %>%
+    step_zv(all_numeric_predictors())
+  
+  # set workflow
+  base_wf <- 
+    workflow() %>% 
+    add_model(xgb_spec) %>% 
+    add_recipe(base_rec) 
+  
+  
+  # parameter tune and get results
+  tic()
+  set.seed(234)
+  base_res <- 
+    base_wf %>% 
+    tune_grid(
+      resamples = df_slice,
+      grid = 5,
+      metrics = metric_set(rmse),
+      control = control_grid(verbose = TRUE, save_pred = FALSE, save_workflow = FALSE)
+    )
+  toc()
+  
+  print(i)
+  
+  # finalize workflow using best result
+  final_wf <- 
+    base_wf %>% 
+    finalize_workflow(select_best(base_res, metric = "rmse"))
+  
+  
+  # trained fit
+  base_fit <-
+    final_wf %>% 
+    last_fit(df_split)
+  
+  ext_wf <- 
+    extract_workflow(base_fit)
+  
+  # get final fit
+  final_fit <- 
+    fit(ext_wf, df_train)
+  
+  submit <- 
+    predict(final_fit, new_data = df_test) %>% 
+    bind_cols(df_test)
+  
+  submit <- 
+    submit %>% select(id, everything()) %>% arrange(id)
+  
+  return(submit)
+  
+}
+
+```
+
+
+
+```{r}
+submission_list = list()
+
+for(i in 1:length(df_set)) {
+  
+  submission_list[[i]] <- getPrediction(i)
+  
+}
+
+submission <- do.call(rbind, lapply(submission_list, function(x) as.data.frame(x[1:5])))
+
+submission <- 
+  submission %>% 
+  mutate(.pred = case_when(.pred < 0 ~ 0, TRUE ~ .pred)) %>% 
+  mutate(.pred = round(.pred, digits = 7)) %>% 
+  arrange(id)
+
+```
+
 
 
 ```{r}
@@ -381,8 +671,9 @@ submission <- submission %>% select(id, .pred)
 
 names(submission) <- c("id", "sales")
 
-write.csv(submission, file = "submission.csv")
+write.csv(submission, file = "submission.csv", row.names = FALSE)
 
 
 ```
+
 
