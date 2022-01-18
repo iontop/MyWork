@@ -1,0 +1,254 @@
+---
+title: "nlp-getting-started"
+author: "J.H AHN"
+date: '2022 1 17 '
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+gc()
+
+library(tidyverse)
+library(tidymodels)
+library(tidytext)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import data set
+
+```{r import_data_Set}
+raw_train <- read_csv("D:/R/competitions/nlp-getting-started/train.csv")
+raw_test <- read_csv("D:/R/competitions/nlp-getting-started/test.csv")
+
+```
+
+Check how many keyword and location are there in train data set  
+
+```{r}
+raw_train %>% distinct(keyword)
+
+raw_train %>% distinct(location)
+
+```
+
+There are 222 keywords and 3280 location in train set.  
+
+```{r}
+raw_test %>% distinct(keyword)
+
+raw_test %>% distinct(location)
+
+```
+
+There are 222 Keywords and 1587 location in test set.  
+`train` and `test` set has same number of `keyword`.  
+but `location` data are way different from each other.  
+  
+### Plot to check skewness
+
+  
+In `train` data set has `target` value to describe a disaster.  
+if target value is '1', it is a real disaster, '0' means otherwise.  
+
+```{r}
+raw_train %>% 
+  ggplot(aes(factor(target), fill = factor(target))) +
+  geom_bar(color = "#000000") +
+  geom_text(stat = 'count', aes(label=..count..), vjust = -1) +
+  scale_fill_brewer(palette = "Pastel1") +
+  labs(title = "Check the skewness of target values", x = NULL)
+
+```
+
+there are 4342 : 3271 values. it doesn't look skewness.  
+  
+  
+### Compare and trim the dataset
+  
+To compare keyword in test and train, combine and make dataframe.  
+
+```{r}
+compare_keyword <- 
+  tibble("train" = raw_train %>% distinct(keyword), 
+         "test" = raw_test %>% distinct(keyword))
+
+```
+
+Comparing `train` keyword and `test` keyword.  
+- generate `compare` column then has '1' if `train` and `test` column has same value  
+- `compare` column has '0' if `train` and `test` column are not same.  
+
+```{r}
+compare_keyword <- 
+  compare_keyword %>%
+  filter(!is.na(train) & !is.na(test)) %>% 
+  mutate(compare = case_when(train == test ~ 1, TRUE ~ 0))
+
+table(compare_keyword$compare)
+
+```
+
+- except only one(1) missing value(NA), all keyword belong to `train` and `test` are the same.  
+- so keyword in `test` and `train` can make identical level of factor.  
+
+
+To be sure, `train` location includes all of `test` location or NOT.
+
+```{r}
+train_location <- raw_train %>% distinct(location)
+test_location <- raw_test %>% distinct(location)
+
+```
+
+using `anti_join()`, check which one include other or NOT.  
+`anto_join()` return all rows from x without a match in y.  
+The location where in `test`set only are 1155, and location where in 'train'set only are 2848.   
+So location of train set and test set can not merget as is.  
+
+```{r}
+anti_join(test_location, train_location)
+
+anti_join(train_location, test_location)
+
+```
+
+location in `train`set are 2534 of missing values and 2736 locations show just once.   
+ONLY 255 of 7613 shows more than one time.  
+So location doesn't have reliability to estimate disaster or NOT.  
+
+```{r}
+raw_train %>% filter(!is.na(location)) %>% count(location) %>% filter(n <= 1)
+
+raw_train %>% filter(!is.na(location)) %>% count(location) %>% filter(n >= 2)
+
+```
+
+```{r}
+raw_train %>% 
+  mutate(na_flag = case_when(is.na(location) ~ "NA", TRUE ~ "VALUE")) %>% 
+  ggplot(aes(factor(na_flag), fill = factor(na_flag))) + 
+  geom_bar(color = "#000000") + 
+  geom_text(stat = 'count', aes(label = ..count..), vjust = -1) +
+  scale_fill_brewer(palette = "Pastel1") +
+  labs(title = "How many NA are in train set", x = NULL)
+
+
+```
+
+```{r}
+raw_train %>% 
+  filter(!is.na(location)) %>% 
+  count(location) %>%  
+  ggplot(aes(n)) + 
+  geom_histogram(stat = 'count') +
+  labs(title = "Distribution of frequency of showing", x = NULL)
+
+
+```
+
+To find out relation between location and disaster, calculate probability.    
+Among the locations that appeared three or more times, 70% or more meant disasters were areas that meant disasters, and locations that appeared three or more times but had a probability of less than 30% were randomly classified as non-disaster areas.  
+
+```{r}
+train_location <- 
+  raw_train %>% 
+  select(id, location, target) %>% 
+  filter(!is.na(location))
+
+train_location
+
+```
+
+If some location show up more than 3 times and these location indicate disaster with over 70% probability, it seems reliable indicator pointed a real disaster.    
+
+```{r}
+idc_dis <- 
+  train_location %>% 
+  group_by(location) %>% 
+  summarise(show = sum(n()), indicate = sum(target), prob = indicate/show) %>% 
+  filter(show >= 3 & prob >= 0.70)
+
+idc_dis$flag <- "DIS"
+
+idc_dis
+
+```
+
+```{r}
+train_location %>% 
+  group_by(location) %>% 
+  summarise(show = sum(n()), indicate = sum(target), prob = indicate/show) %>% 
+  filter(show >= 3 & prob >= 0.70) %>% 
+  ggplot(aes(fct_reorder(location, prob), prob, fill = location)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "High probability location", y = NULL) +
+  theme(legend.position = "bottom")
+
+```
+
+
+In contrast, if some location show up more than 3 times and these location indicate non-disaster with over 75% probability, it seems reliable indicator pointed a non-disaster.    
+
+```{r}
+idc_nondis <- 
+  train_location %>% 
+  group_by(location) %>% 
+  summarise(show = sum(n()), indicate = sum(target), prob = indicate/show) %>% 
+  filter(show >= 3 & prob <= 0.30)
+
+idc_nondis$flag <- "NON"
+
+idc_nondis
+
+```
+
+```{r}
+train_location %>% 
+  group_by(location) %>% 
+  summarise(show = sum(n()), indicate = sum(target), prob = indicate/show) %>% 
+  filter(show >= 3 & prob <= 0.30) %>% 
+  ggplot(aes(fct_reorder(location, prob), prob, fill = location)) +
+  geom_col() +
+  coord_flip() +
+  labs(title = "Low probability location", y = NULL) +
+  theme(legend.position = "bottom")
+
+```
+
+It is more effective to put the probability value without dividing into "disaster" and "non-disaster".   
+
+```{r}
+idc <- 
+  train_location %>% 
+  group_by(location) %>% 
+  summarise(show = sum(n()), indicate = sum(target), prob = indicate/show)
+
+idc
+
+```
+
+
+
+
+```{r}
+tidy_train <- 
+  raw_train %>% 
+  unnest_tokens(word, text, token = "tweets") %>% 
+  anti_join(stop_words)
+
+```
+
+
+
+```{r}
+tidy_train %>% 
+  count(word, sort = TRUE) %>% view()
+
+```
+
+
