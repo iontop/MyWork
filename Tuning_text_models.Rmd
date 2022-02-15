@@ -1,0 +1,577 @@
+---
+title: "Tuning text models"
+author: "J.H AHN"
+date: '2022 2 15 '
+output:  
+  prettydoc::html_pretty:
+    theme: cayman
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+gc()
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**학습목표**  
+
+Prepare text data for predictive modeling and tune with both grid and iterative search.  
+
+## Introduction  
+
+이 문서의 코드를 사용하려면 `stopwords`, `textfeatures`, `textrecipes` 및 `tintymodels` 패키지를 설치해야 합니다.  
+
+이 문서에서는 텍스트 데이터에 대한 모델 학습 및 조정을 위한 고급 예제를 보여줍니다. 텍스트 데이터는 모델링에서 계산할 준비가 되도록 처리되고 숫자 표현으로 변환되어야 합니다. Tidymodels에서 우리는 이 전처리를 위한 recipe를 사용합니다. 이 문서는 또한 나중에 사용하기 위해 조정하는 동안 각 모델 적합(model fit)에서 정보를 추출하는 방법을 보여줍니다.   
+
+## Text as data  
+
+여기서 사용할 텍스트 데이터는 아마존에서 가져온 것이다.  
+
+> This dataset consists of reviews of fine foods from amazon. The data span a period of  
+> more than 10 years, including all ~500,000 reviews up to October 2012. Reviews  
+> include product and user information, ratings, and a plaintext review.  
+
+예제에서는 원본 소스(https://snap.stanford.edu/data/web-FineFoods.html) 에서  전체 리뷰의 작은 하위 집합을 사용합니다. 5,000개의 무작위 제품에서 단일 리뷰를 샘플링하고 이 데이터의 80%를 훈련 세트에 할당하고 나머지 1,000개 리뷰는 테스트 세트에 할당했습니다.  
+
+product에 대한 열, review 텍스트에 대한 열, 결과 변수에 대한 요인 열이 있습니다. 결과는 리뷰어가 제품에 별 5개 등급을 부여했는지 여부입니다.   
+
+```{r}
+library(tidymodels)
+
+data("small_fine_foods")
+
+training_data
+
+```
+
+
+예제의 모델링 목표는 review 텍스트에서 모델링 기능을 만들어 리뷰가 별점 5개인지 여부를 예측하는 것입니다.   
+
+## Inputs for the search  
+
+아마도 우리가 자주 다루는 표 형식의 데이터보다 텍스트는 모델링을 위한 예측 데이터로 사용하기 위해 많이 처리되어야 합니다. 모델링을 위해 텍스트를 처리하고 준비하는 방법에는 여러 가지가 있습니다. 여러 단계를 함께 추가하여 다양한 기능을 생성해 보겠습니다.  
+
+
+- 단어 수, 공백, 소문자 또는 대문자, URL 등과 같은 초기 개수 기반 기능 세트를 생성합니다. 이를 위해 `textfeatures` 패키지를 사용할 수 있습니다.  
+- 텍스트를 토큰화합니다(즉, 텍스트를 단어와 같은 더 작은 구성요소로 나눕니다).  
+- "", "an", "of" 등과 같은 불용어를 제거합니다.  
+- 가능한 경우 공통 루트에 토큰을 stem(https://smltar.com/stemming.html) 합니다.  
+- 서명된 이진 해시 함수(https://bookdown.org/max/FES/encoding-predictors-with-many-categories.html) 를 통해 토큰을 더미 변수로 변환합니다.  
+- 선택적으로 Yeo-Johnson변환(https://bookdown.org/max/FES/numeric-one-to-one.html) 을 사용하여 토큰이 아닌 기능(소문자 수와 같은 개수 기반 기능)을 보다 대칭적인 상태로 변환합니다.  
+- 단일 고유 값이 있는 예측 변수를 제거합니다.  
+- 모든 예측 변수를 중심에 놓고 척도화합니다.  
+
+```{.rmdnote}
+두 가지 종류의 기능으로 끝납니다.  
+
+- 자릿수 또는 구두점 문자와 같은 카운트 기반 기능에 대한 dummy/indicator 변수  
+- "salsa" 또는 "delicious"과 같은 토큰에 대한 해시 기능.
+
+```
+
+이러한 전처리 단계(예: 형태소 분석) 중 일부는 좋은 아이디어일 수도 있고 아닐 수도 있지만 그 효과에 대한 완전한 논의는 이 기사의 범위를 벗어납니다. 이 전처리 방식에서 주요 조정 매개변수는 사용할 해싱 기능의 수입니다.  
+  
+
+전처리 레시피 작성을 시작하기 전에 도우미 객체가 필요합니다. 예를 들어, Yeo-Johnson 변환의 경우 개수 기반 텍스트 기능 집합을 알아야 합니다.  
+
+```{r}
+library(textfeatures)
+
+count_functions
+
+```
+
+```{r}
+names(count_functions)
+
+```
+
+```{r}
+basics <- names(count_functions)
+
+```
+
+또한 기능 해시의 구현(the implementation of feature hashes)은 우리가 필요로 하는 바이너리 값을 생성하지 않습니다. 아래 짧은 코드의 함수는 점수를 -1, 0 또는 1 값으로 변환하는 데 도움이 됩니다.  
+
+```{r}
+binary_hash <- function(x) {
+  x <- ifelse(x < 0, -1, x)
+  x <- ifelse(x > 0, 1, x)
+  x
+}
+
+```
+
+이제 모든 것을 하나의 recipe에 넣어보자.  
+
+```{r}
+library(textrecipes)
+
+recipe(score ~ product + review, data = training_data) %>% 
+  # Do not use the product ID as a predictor
+  update_role(product, new_role = "id") %>% 
+  # Make a copy of the raw text
+  step_mutate(review_raw = review) %>% 
+  prep() %>% juice()
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  # Do not use the product ID as a predictor
+  update_role(product, new_role = "id") %>% 
+  # Make a copy of the raw text
+  step_mutate(review_raw = review) %>% 
+  # Compute the initial features. This removes the 'review_raw' column
+  step_textfeature(review_raw) %>% 
+  prep() %>% juice()
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  # Do not use the product ID as a predictor
+  update_role(product, new_role = "id") %>% 
+  # Make a copy of the raw text
+  step_mutate(review_raw = review) %>% 
+  # Compute the initial features. This removes the 'review_raw' column
+  step_textfeature(review_raw) %>% 
+  # Make the feature names shorter
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  prep() %>% juice()
+
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  # Do not use the product ID as a predictor
+  update_role(product, new_role = "id") %>% 
+  # Make a copy of the raw text
+  step_mutate(review_raw = review) %>% 
+  # Compute the initial features. This removes the 'review_raw' column
+  step_textfeature(review_raw) %>% 
+  # Make the feature names shorter
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  prep() %>% juice()
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  # Do not use the product ID as a predictor
+  update_role(product, new_role = "id") %>% 
+  # Make a copy of the raw text
+  step_mutate(review_raw = review) %>% 
+  # Compute the initial features. This removes the 'review_raw' column
+  step_textfeature(review_raw) %>% 
+  # Make the feature names shorter
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  prep() %>% juice()
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  # Do not use the product ID as a predictor
+  update_role(product, new_role = "id") %>% 
+  # Make a copy of the raw text
+  step_mutate(review_raw = review) %>% 
+  # Compute the initial features. This removes the 'review_raw' column
+  step_textfeature(review_raw) %>% 
+  # Make the feature names shorter
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_stem(review) %>% 
+  prep() %>% juice() # %>% pull(review)
+```
+
+```{r}
+library(Matrix)
+library(rsparse)
+library(lgr)
+
+recipe(score ~ product + review, data = training_data) %>% 
+  update_role(product, new_role = "id") %>% 
+  step_mutate(review_raw = review) %>% 
+  step_textfeature(review_raw) %>% 
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_stem(review) %>% 
+  step_texthash('review') %>% 
+  prep() %>% juice() # %>% pull(review)
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  update_role(product, new_role = "id") %>% 
+  step_mutate(review_raw = review) %>% 
+  step_textfeature(review_raw) %>% 
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_stem(review) %>% 
+  step_texthash('review') %>% 
+  step_rename_at(starts_with("review_hash"), fn = ~ gsub("review_","", .)) %>% 
+  prep() %>% juice() # %>% pull(review)
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  update_role(product, new_role = "id") %>% 
+  step_mutate(review_raw = review) %>% 
+  step_textfeature(review_raw) %>% 
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_stem(review) %>% 
+  step_texthash('review') %>% 
+  step_rename_at(starts_with("review_hash"), fn = ~ gsub("review_","", .)) %>% 
+  step_mutate_at(starts_with("hash"), fn = binary_hash) %>% 
+  prep() %>% juice() # %>% pull(review)
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  update_role(product, new_role = "id") %>% 
+  step_mutate(review_raw = review) %>% 
+  step_textfeature(review_raw) %>% 
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_stem(review) %>% 
+  step_texthash('review') %>% 
+  step_rename_at(starts_with("review_hash"), fn = ~ gsub("review_","", .)) %>% 
+  step_mutate_at(starts_with("hash"), fn = binary_hash) %>% 
+  step_YeoJohnson(one_of(!!basics)) %>% 
+  prep() %>% juice() # %>% pull(review)
+
+```
+
+```{r}
+recipe(score ~ product + review, data = training_data) %>% 
+  update_role(product, new_role = "id") %>% 
+  step_mutate(review_raw = review) %>% 
+  step_textfeature(review_raw) %>% 
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_stem(review) %>% 
+  step_texthash('review') %>% 
+  step_rename_at(starts_with("review_hash"), fn = ~ gsub("review_","", .)) %>% 
+  step_mutate_at(starts_with("hash"), fn = binary_hash) %>% 
+  step_YeoJohnson(one_of(!!basics)) %>% 
+  step_zv(all_predictors()) %>% 
+  prep() %>% juice() # %>% pull(review)
+
+```
+
+```{r}
+pre_proc <- 
+  recipe(score ~ product + review, data = training_data) %>% 
+  update_role(product, new_role = "id") %>% 
+  step_mutate(review_raw = review) %>% 
+  step_textfeature(review_raw) %>% 
+  step_rename_at(
+    starts_with("textfeature_"),
+    fn = ~ gsub("textfeature_review_raw_", "", .)
+  ) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_stem(review) %>% 
+  step_texthash('review', signed = TRUE, num_terms = tune()) %>% 
+  step_rename_at(starts_with("review_hash"), fn = ~ gsub("review_","", .)) %>% 
+  step_mutate_at(starts_with("hash"), fn = binary_hash) %>% 
+  step_YeoJohnson(one_of(!!basics)) %>% 
+  step_zv(all_predictors()) %>% 
+  step_normalize(all_predictors())
+
+pre_proc
+
+```
+
+**step_texthash('review', signed = TRUE, num_terms = tune())**
+: Here is where the tuning parameter is declared  
+: num_terms = tune()을 사용하면서 prep()를 하면 *Error: You cannot `prep()` a tuneable recipe.* 가 발생    
+
+**step_mutate_at(starts_with("hash"), fn = binary_hash)**  
+: Convert the features from counts to values of -1, 0, or 1
+
+**step_YeoJohnson(one_of(!!basics))**  
+: Transform the initial feature set  
+
+
+전처리 방법은 길고 복잡하지만(일반적으로 텍스트 데이터 작업에 일반적임) 우리가 사용할 모델은 더 간단합니다. 정규화된 로지스틱 회귀 모델을 고수합시다.  
+
+```{r}
+lr_mod <- 
+  logistic_reg(penalty = tune(), mixture = tune()) %>% 
+  set_engine("glmnet")
+
+lr_mod
+```
+
+이 데이터 분석에는 세 가지 조정 매개변수가 있습니다.
+
+- `num_terms`, 생성할 기능 해시 변수의 수  
+- `penalty`, 모델의 정규화 양  
+- `mixture`, L1 정규화 비율  
+
+## Resampling  
+
+여기에는 10겹 리샘플링이 성능을 추정하기 위해 한 번에 400개의 리뷰를 보유할 수 있을 만큼 충분한 데이터가 있습니다. 이 많은 관측치를 사용한 성능 추정치는 모델을 측정하고 조정하기에 충분히 낮은 노이즈를 가지고 있습니다.
+
+```{r}
+set.seed(8935)
+folds <- vfold_cv(training_data)
+folds
+
+```
+
+
+## Grid search
+
+그리드 검색(https://www.tidymodels.org/learn/work/tune-svm/) 과 일반 그리드로 튜닝을 시작합시다 . glmnet 모델의 경우 "submodel-trick"(https://tune.tidymodels.org/articles/extras/optimizations.html#sub-model-speed-ups-1) 을 사용하기 때문에 패널티 값을 평가하는 것이 상당히 작습니다. 그리드는 20개의 페널티 값, 5개의 혼합 값 및 3개의 값을 해시 기능 수로 사용합니다.
+
+```{r}
+five_star_grid <- 
+  crossing(
+    penalty = 10^seq(-3, 0, length = 30),
+    mixture = c(0.01, 0.25, 0.50, 0.75, 1),
+    num_terms = 2^c(8, 10, 12)
+  )
+
+five_star_grid
+
+```
+
+각 resample에 대해 (계산 비용이 많이 드는) 텍스트 전처리 레시피는 6번만 준비됩니다. 이는 중복 작업을 방지하여 분석의 효율성을 높입니다.  
+
+각 glmnet 모델에 대한 패널티 값으로 예측 변수의 수에 대한 정보를 저장합시다. 이는 패널티 값에서 사용된 기능의 수를 이해하는 데 도움이 됩니다. 추출 기능을 사용하여 다음을 수행하십시오.  
+
+**x** will be a workflow object  
+**df** is the number of model terms for each penalty value  
+
+```{r}
+glmnet_vars <- function(x) {
+  mod <- extract_model(x)
+  tibble(penalty = mod$lambda, num_vars = mod$df)
+}
+
+ctrl <- control_grid(extract = glmnet_vars, verbose = TRUE)
+
+```
+
+이제 Grid search를 실행해 보자.
+
+```{r}
+roc_scores <- metric_set(roc_auc)
+
+roc_scores
+
+```
+
+```{r}
+doParallel::registerDoParallel()
+
+set.seed(1559)
+
+five_star_glmnet <- 
+  tune_grid(
+    object = lr_mod,
+    preprocessor = pre_proc,
+    resamples = folds,
+    grid = five_star_grid,
+    metrics = roc_scores,
+    control = ctrl
+  )
+
+five_star_glmnet
+
+```
+
+완료하는 데 시간이 걸렸습니다! 결과는 어떻게 됩니까? 각 조정 매개변수에 대한 ROC 곡선 아래 영역의 리샘플링 추정치를 구해 보겠습니다.  
+
+```{r}
+grid_roc <- 
+  collect_metrics(five_star_glmnet) %>% 
+  arrange(desc(mean))
+
+grid_roc
+
+
+```
+
+
+최상의 결과는 상당히 높은 패널티 값을 가지며 ridge 패널티에 초점을 맞춥니다(즉, lasso의 L1 패널티를 통해 features 선택이 없음). 최고의 솔루션은 또한 가장 많은 해싱 값을 가지고 있다.  
+
+성능과 조정 매개변수 사이의 관계는 무엇입니까?  
+
+```{r}
+autoplot(five_star_glmnet, metric = "roc_auc")
+
+```
+
+- 포함된 feature의 수에 따라 성능이 향상된다는 것을 확실히 알 수 있습니다. 위 예시에서는 사용 가능한 전체 데이터 세트의 작은 샘플을 사용했습니다. 더 많은 데이터가 사용되면 더 큰 feature set이 최적입니다.  
+
+- mixture 값이 더 큰(0.01보다 큰) 프로파일은 성능이 급격히 떨어집니다. 그게 뭐야? lasso penalty가 모델에서 너무 많은(아마도 모든) feature를 제거하는 경우입니다.  
+
+- 4096개 이상의 기능이 있는 패널은 성능이 거의 동일한 여러 매개변수 조합이 있음을 보여줍니다. 다른 mixture 값에 대한 최상의 성능 사이에는 큰 차이가 없습니다. 더 적은 수의 예측 변수를 포함하는 더 단순한 모델을 선택하기 위해 더 큰 혼합 값과 더 작은 페널티를 선택 해야 하는 경우가 만들어질 수 있습니다.    
+
+- 더 많은 실험이 수행된 경우 더 큰 feature set(4096개 이상)도 고려해야 합니다.
+
+이 문서의 끝에 위에서 추출해 둔 glmnet component를 사용할 것이다.  
+
+
+
+## Directed search
+
+베이지안 최적화로 시작했다면 어떨까요? 좋은 조건 세트가 더 효율적으로 발견되었을까요?  
+
+그리드 검색 결과를 보지 못했다고 가정해 봅시다. 공간 채우기 설계로 선택한 5가지 조정 매개변수 조합으로 가우스 프로세스 모델을 초기화합니다.  
+
+해시 용어의 수에 대해 custom한 `dials` 개체를 사용하는 것이 좋습니다 . 기본 개체인 `num_terms()`은 선형 범위를 사용하고 데이터를 사용하여 매개변수의 상한을 설정하려고 합니다. 대신에 매개변수 집합을 만들고 눈금을 `log2` 로 변경하고, 그리드 검색에서 사용된 것과 동일한 범위를 정의해 보겠습니다.  
+
+```{r}
+# grid search:  num_terms = 2^c(8, 10, 12)
+hash_range <- num_terms(c(8, 12), trans = log2_trans())
+
+hash_range
+
+```
+
+이를 사용하려면 레시피와 `parsnip` 모델 개체를 워크플로에 병합해야 합니다. 이전에는 workflow를 만들지 않고 recipe에 바로 lr_mod를 사용했음.  
+
+```{r}
+five_star_wflow <- 
+  workflow() %>% 
+  add_recipe(pre_proc) %>% 
+  add_model(lr_mod)
+
+five_star_wflow
+
+```
+
+
+그런 다음 해당 매개변수 세트를 추출하고 조작할 수 있습니다.  
+
+
+```{r}
+five_star_wflow %>% 
+  parameters()
+
+
+```
+
+```{r}
+five_star_wflow %>% 
+  parameters() %>% 
+  update(
+    num_terms = hash_range,
+    penalty = penalty(c(-3, 0)),
+    mixture = mixture(c(0.05, 1.00))
+  ) %>% pull()
+
+
+```
+
+```{r}
+five_star_set <- 
+  five_star_wflow %>% 
+  parameters() %>% 
+  update(
+    num_terms = hash_range,
+    penalty = penalty(c(-3, 0)),
+    mixture = mixture(c(0.05, 1.00))
+  )
+
+five_star_set
+
+```
+
+
+이것은 `param_info`인수 를 통해 검색 기능에 전달됩니다.  
+
+초기 검색 라운드는 매개변수 공간 탐색에 더 치우칠 수 있습니다(현재 최상의 결과 근처에 머무르는 것과 반대). 예상되는 개선이 획득 기능으로 사용되는 경우 트레이드오프 값은 반복을 통해 탐색에서 활용으로 천천히 이동할 수 있습니다. ( 자세한 내용은 획득 기능(https://tune.tidymodels.org/articles/acquisition_functions.html) 에 대한 조정 비네트 참조). tune 패키지에는 이를 수행하는 데 도움 이 되는 내장 함수 `expo_decay()` 가 있습니다.  
+
+
+```{r}
+trade_off_decay <- function(iter) {
+  expo_decay(iter, start_val = 0.01, limit_val = 0, slope = 1/4)
+}
+
+```
+
+이 값들을 이용해서 검색을 실행해보자.  
+
+```{r}
+set.seed(12)
+
+five_star_search <- 
+  tune_bayes(
+    object = five_star_wflow,
+    resamples = folds,
+    iter = 30,
+    param_info = five_star_set,
+    initial = 5,
+    metrics = roc_scores,
+    objective = exp_improve(trade_off_decay),
+    control = control_bayes(verbose = TRUE)
+  )
+
+```
+
+이 결과는 초기 세트보다 약간의 개선을 보여줍니다. 한 가지 문제는 너무 많은 설정이 최적이 아니어서(위의 그리드 검색 플롯에 표시된 대로) 주기적으로 좋지 않은 결과가 나온다는 것입니다. 패널티 매개변수가 너무 커져 모든 예측 변수가 모델에서 제거되는 영역이 있습니다. 이 영역은 또한 항의 수에 따라 다릅니다. 좋은 성능을 얻을 수 있는 상당히 좁은 능선이 있습니다(죄송합니다. 말장난입니다!). 더 많은 반복을 사용하면 검색에서 더 나은 결과를 얻을 수 있습니다. 모델 성능 대 검색 반복의 플롯을 살펴보겠습니다.
+
+```{r}
+autoplot(five_star_search, type = "performance")
+
+```
+
+````
+그리드 검색 결과에 대해 알고 있고 방향성 있는 반복 검색을 시도하고 싶다면 어떻게 해야 할까요? 해시 기능 수의 범위를 더 크게 제한합니다(특히 데이터가 많을수록). 페널티 및 혼합 매개변수가 하한 상한을 갖도록 제한할 수도 있습니다.  
+
+```
+
+
+
+## Extracted results
+
+
+
+

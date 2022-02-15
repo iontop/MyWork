@@ -14,6 +14,8 @@ gc()
 library(tidyverse)
 library(tidymodels)
 library(tidytext)
+library(textrecipes)
+library(themis)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -30,7 +32,6 @@ Check how many keyword and location are there in train data set
 
 ```{r}
 raw_train %>% distinct(keyword)
-
 raw_train %>% distinct(location)
 
 ```
@@ -39,7 +40,6 @@ There are 222 keywords and 3280 location in train set.
 
 ```{r}
 raw_test %>% distinct(keyword)
-
 raw_test %>% distinct(location)
 
 ```
@@ -223,12 +223,12 @@ train_location %>%
 It is more effective to put the probability value without dividing into "disaster" and "non-disaster".   
 
 ```{r}
-idc <- 
+location_indicator <- 
   train_location %>% 
   group_by(location) %>% 
   summarise(show = sum(n()), indicate = sum(target), prob = indicate/show)
 
-idc
+location_indicator
 
 ```
 
@@ -247,8 +247,33 @@ tidy_train <-
 
 ```{r}
 tidy_train %>% 
-  count(word, sort = TRUE) %>% view()
+  count(target, word, sort = TRUE) %>% 
+  group_by(target) %>% 
+  slice_max(n, n = 15) %>% 
+  ungroup() %>% 
+  mutate(word = reorder_within(word, n, target)) %>% 
+  ggplot(aes(n, word, fill = target)) +
+  geom_col(show.legend = FALSE, alpha = 0.9) +
+  scale_y_reordered() +
+  scale_fill_continuous(type = "viridis") +
+  facet_wrap(~target, scales = "free") +
+  labs(x = "Frequency", y = NULL, 
+       title = "Top words in tweet reflect a real disaster")
 
 ```
+
+
+```{r}
+dtm <- tidy_train %>% cast_dtm(word, id, target)
+sparse <- tidy_train %>% cast_sparse(word, id, target)
+class(sparse)
+dim(sparse)
+```
+
+```{r}
+
+
+```
+
 
 

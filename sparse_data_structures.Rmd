@@ -1,0 +1,280 @@
+---
+title: "sparse data structures in tidymodels"
+author: "J.H AHN"
+date: '2022 2 15 '
+output: 
+  html_document:
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+gc()
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Why sparse data
+
+This example comes from tidyverse blog(https://www.tidyverse.org/blog/2020/11/tidymodels-sparse-support)  
+
+일부 주제 영역에서는 데이터를 분석 또는 모델링에 적합한 표현으로 변환한 후 많은 0을 갖는 것이 일반적입니다. 텍스트 데이터가 그러한 예입니다. 아마존 고급 식품 리뷰의 `small_fine_food` 데이터 세트에는 인간이 읽고 이해할 수 있는 칼럼 `review`가 포함되어 있습니다.   
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+
+data("small_fine_foods")
+
+training_data
+```
+
+
+반면에 컴퓨터는 대부분의 모델링에 사용할 수 있도록 `review` 변수를 사전 처리하고 변환해야 합니다. 일반적으로 텍스트를 토큰화하고 단어 빈도를 찾고 아마도 tf-idf를 계산해야 합니다. 이 전처리 결과를 저장하는 데 사용할 수 있는 다양한 구조가 있습니다. 탐색적 데이터 분석에 탁월한 길고 깔끔한 tibble에 결과를 보관할 수 있습니다. 
+
+
+```{r}
+library(tidytext)
+
+training_data %>% 
+  unnest_tokens(word, review)
+
+```
+
+```{r}
+training_data %>% 
+  unnest_tokens(word, review) %>% 
+  count(product, word)
+
+```
+
+```{r}
+training_data %>% 
+  unnest_tokens(word, review) %>% 
+  count(product, word) %>% 
+  bind_tf_idf(word, product, n)
+
+```
+
+```{r}
+tidy_review <- training_data %>% 
+  unnest_tokens(word, review) %>% 
+  count(product, word) %>% 
+  bind_tf_idf(word, product, n)
+
+tidy_review
+
+```
+
+또한 이러한 결과를 다음 단계가 모델링 또는 기계 학습 알고리즘일 때 적합한 wide format으로 변환할 수도 있습니다.  
+
+```{r}
+tidy_review %>% 
+  select(product, word, tf_idf)
+
+
+```
+
+```{r}
+tidy_review %>% 
+  select(product, word, tf_idf) %>% 
+  pivot_wider(names_from = word, names_prefix = "word_",
+              values_from = tf_idf, values_fill = 0)
+```
+
+```{r}
+wide_review <- tidy_review %>% 
+  select(product, word, tf_idf) %>% 
+  pivot_wider(names_from = word, names_prefix = "word_",
+              values_from = tf_idf, values_fill = 0)
+
+wide_review
+
+```
+
+
+정말많은 0이 있다! tibble을 사용하는 대신 이러한 결과를 모든 요소 대신 0이 아닌 요소만 추적하는 특수 데이터 구조인 희소 행렬(sparse matrix)로 변환할 수 있습니다. 
+
+```{r}
+tidy_review %>% cast_dfm(document = product,
+                         term = word,
+                         value = tf_idf)
+
+
+```
+
+```{r}
+sparse_review <- tidy_review %>% 
+  cast_dfm(document = product, term = word, value = tf_idf)
+
+```
+
+```{r}
+class(sparse_review)
+```
+
+텍스트 데이터의 경우 일반적으로 이 문서 기능 행렬은 0이 많이 포함된 매우 희소합니다. 대부분의 문서에는 대부분의 단어가 포함되어 있지 않습니다. vanilla `matrix`이나 `data.frame`과 같은 것 대신에 이런 종류의 특수 구조를 사용함으로써 우리는 두 가지 이점을 확보할 수 있습니다.
+
+- 희소 데이터용으로 구축된 모든 특수 모델 알고리즘에서 얻은 속도를 활용할 수 있습니다.  
+- 이 개체에 필요한 메모리 양이 크게 줄어듭니다.  
+
+얼마나 큰 메모리 변화에 대해 이야기하고 있습니까? 
+
+```{r}
+lobstr::obj_sizes(wide_review, sparse_review)
+```
+
+## A blueprint for sparse models
+
+hardhat, parsnip 및 tune의 최신 릴리스 이전에는 tidymodels 내에서 희소 데이터 구조에 대한 지원이 없었습니다. 이제 sparse data를 사용하기 위한 hardhat blueprint를 지정할 수 있습니다. 
+
+```{r}
+library(hardhat)
+
+default_recipe_blueprint(composition = "dgCMatrix")
+
+```
+
+`dgCMatrix` 구성은 Matrix 패키지에 있으며 R에서 모델링할 때 희소 숫자 행렬에 대한 가장 표준적인 클래스입니다. (`composition = "matrix"`를 사용하여 dense matrix composition (조밀한 행렬 구성)을 지정할 수도 있습니다.) 
+
+```{r}
+sparse_bp <- default_recipe_blueprint(composition = "dgCMatrix")
+
+class(sparse_bp)
+```
+
+
+## Workflows and sparsity
+
+blueprint는 데이터를 처리하기 위해 hardhat 기능에 의해 hood 아래에서 사용됩니다. sparse blueprint를 사용하여 모델을 맞출 준비를 하기 위해 사전 처리 recipe를 설정할 수 있습니다.   
+
+```{r}
+library(textrecipes)
+
+recipe(score ~ review, data = training_data) %>% prep() %>% juice()
+
+```
+
+```{r}
+recipe(score ~ review, data = training_data) %>% 
+  step_tokenize(review) %>% 
+  prep() %>% juice()
+```
+
+```{r}
+recipe(score ~ review, data = training_data) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  prep() %>% juice()
+
+```
+
+```{r}
+recipe(score ~ review, data = training_data) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_tokenfilter(review, max_tokens = 1e3) %>% 
+  prep() %>% juice()
+
+```
+
+```{r}
+recipe(score ~ review, data = training_data) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_tokenfilter(review, max_tokens = 1e3) %>% 
+  step_tfidf(review) %>% 
+  prep() %>% juice()
+
+```
+
+```{r}
+text_rec <- 
+  recipe(score ~ review, data = training_data) %>% 
+  step_tokenize(review) %>% 
+  step_stopwords(review) %>% 
+  step_tokenfilter(review, max_tokens = 1e3) %>% 
+  step_tfidf(review)
+
+```
+
+```{r}
+lasso_spec <- 
+  logistic_reg(penalty = 0.02, mixture = 1) %>% 
+  set_engine("glmnet")
+
+```
+
+glmnet 패키지의 정규화된 모델링은 희소 데이터에 대해 특수화된 접근 방식을 사용하는 알고리즘의 한 예입니다. `set_engine("glmnet")`을 사용하여 조밀한 데이터를 전달하면 기본 모델은 한 가지 접근 방식을 사용하지만 희소 행렬을 전달할 경우 희소 데이터를 위해 특별히 구축된 다른 더 빠른 접근 방식을 사용합니다. 일반적으로 glmnet과 같은 정규화된 모델을 피팅하기 전에 `step_normalize()`를 사용하여 예측자를 센터링 및 스케일링하는 것이 좋습니다. 그러나 이렇게 하면 더 이상 0과 희소 데이터가 모두 없게 됩니다. 대신 tf-idf를 사용하여 이러한 텍스트 예측자를 "정규화"하여 모두 동일한 척도에 있도록 할 수 있습니다.  
+
+하나는 sparse blueprint를 사용하고 다른 하나는 기본 동작을 사용하는 두 개의 워크플로를 함께 구성해 보겠습니다.   
+
+```{r}
+wf_sparse <- 
+  workflow() %>% 
+  add_recipe(text_rec, blueprint = sparse_bp) %>% 
+  add_model(lasso_spec)
+
+wf_default <- 
+  workflow() %>% 
+  add_recipe(text_rec) %>% 
+  add_model(lasso_spec)
+
+```
+
+
+## Comparing model results
+
+이제 `fit_resamples()`를 사용하여 이 모델이 두 옵션에 얼마나 잘 맞는지 추정하고 두 옵션 모두에 대한 성능을 측정해 보겠습니다.  
+
+```{r}
+set.seed(123)
+
+food_folds <- vfold_cv(training_data, v = 3)
+
+food_folds
+
+```
+
+```{r}
+results <- 
+  bench::mark(
+  iterations = 10, check = FALSE,
+  sparse = fit_resamples(wf_sparse, food_folds),
+  default = fit_resamples(wf_default, food_folds)
+)
+
+```
+
+결과를 보면 sparse blueprint를 사용한는 것이 거의 10배 이상 빠르다는 것을 알 수 있다.  
+
+```{r}
+autoplot(results, type = "ridge")
+```
+
+```{r}
+fit_resamples(wf_sparse, food_folds) %>% 
+  collect_metrics()
+
+```
+
+```{r}
+fit_resamples(wf_default, food_folds) %>% 
+  collect_metrics()
+
+```
+
+
+## Current limits
+
+Tidymodels에서 희소 데이터 구조에 대한 지원은 전처리 recipe에서 시작하여 피팅 및 튜닝 프로세스 전반에 걸쳐 계속됩니다. 우리는 일반적으로 이 텍스트 분석 예제에서 볼 수 있는 것처럼 recipe에 대한 입력이 데이터 프레임이 될 것으로 예상하고, 예를 들어 `parsnip::fit_xy()`를 사용하여 희소 행렬로 시작하기 위한 Tidymodels 내 지원은 매우 제한적입니다.
+
+현재 parsnip에는 희소 데이터 인코딩을 지원하는 세 가지 모델이 있습니다.
+
+- 선형 및 로지스틱 회귀(다항 회귀 포함)를 위한 glmnet 엔진,  
+- 부스트 트리를 위한 XGBoost 엔진 및  
+- 랜덤 포레스트를 위한 레인저 엔진.  
+
+recipe 자체가 내부적으로 데이터를 처리하는 방식에 이질성이 있습니다. 이것이 `wf_sparse`를 `wf_default`와 비교할 때 메모리 사용이 크게 감소하지 않는 이유입니다. textrecipes[^https://textrecipes.tidymodels.org/] 패키지는 희소 데이터에 대해 메모리 효율적인 tokenlist[^https://textrecipes.tidymodels.org/reference/tokenlist.html] 이라는 아이디어를 내부적으로 채택하지만 다른 recipe 단계는 조밀한 tibble 구조의 데이터를 처리할 수 있습니다. 모델링 프로젝트의 메모리 요구 사항을 고려할 때 이러한 현재 제한을 염두에 두십시오!   
+
