@@ -136,6 +136,7 @@ a.sourceLine {
 
 
 <section class="main-content">
+<p>Source: <a href="https://www.tidymodels.org/learn/work/tune-text/" class="uri">https://www.tidymodels.org/learn/work/tune-text/</a></p>
 <p><strong>학습목표</strong></p>
 <p>Prepare text data for predictive modeling and tune with both grid and iterative search.</p>
 <div id="introduction" class="section level2">
@@ -171,7 +172,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ## x dplyr::filter()  masks stats::filter()
 ## x dplyr::lag()     masks stats::lag()
 ## x recipes::step()  masks stats::step()
-## * Learn how to get started at https://www.tidymodels.org/start/</code></pre>
+## * Use tidymodels_prefer() to resolve common conflicts.</code></pre>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;small_fine_foods&quot;</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>training_data</span></code></pre></div>
@@ -233,7 +234,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029468d20&gt;
+## &lt;bytecode: 0x0000000029458098&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_uq_words
@@ -249,7 +250,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002946be58&gt;
+## &lt;bytecode: 0x000000002945b138&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_charS
@@ -263,7 +264,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002946f528&gt;
+## &lt;bytecode: 0x000000002945a140&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_uq_charS
@@ -279,7 +280,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002946e8e8&gt;
+## &lt;bytecode: 0x00000000294594c8&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_digits
@@ -293,7 +294,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002946d8f0&gt;
+## &lt;bytecode: 0x000000002945c300&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_hashtags
@@ -307,7 +308,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029470878&gt;
+## &lt;bytecode: 0x000000002945b458&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_uq_hashtags
@@ -323,7 +324,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002946fa08&gt;
+## &lt;bytecode: 0x000000002945e6e8&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_mentions
@@ -337,7 +338,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029472808&gt;
+## &lt;bytecode: 0x000000002945d680&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_uq_mentions
@@ -353,7 +354,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029471998&gt;
+## &lt;bytecode: 0x0000000029460640&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_commas
@@ -367,7 +368,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x00000000294766b8&gt;
+## &lt;bytecode: 0x0000000029463808&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_periods
@@ -381,7 +382,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029475848&gt;
+## &lt;bytecode: 0x0000000029462998&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_exclaims
@@ -395,7 +396,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029478808&gt;
+## &lt;bytecode: 0x0000000029465f30&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_extraspaces
@@ -409,7 +410,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029477998&gt;
+## &lt;bytecode: 0x00000000294650c0&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_caps
@@ -423,7 +424,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002947a920&gt;
+## &lt;bytecode: 0x0000000029468080&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_lowers
@@ -437,7 +438,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x0000000029479ab0&gt;
+## &lt;bytecode: 0x0000000029467210&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_urls
@@ -451,7 +452,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002947ca70&gt;
+## &lt;bytecode: 0x000000002946a198&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_uq_urls
@@ -467,7 +468,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002947bc00&gt;
+## &lt;bytecode: 0x0000000029469328&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_nonasciis
@@ -482,7 +483,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002947e9c8&gt;
+## &lt;bytecode: 0x000000002946c128&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $n_puncts
@@ -497,7 +498,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     x[na] &lt;- NA_integer_
 ##     x
 ## }
-## &lt;bytecode: 0x000000002947d8f0&gt;
+## &lt;bytecode: 0x000000002946b050&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $politeness
@@ -506,7 +507,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     purrr::map_dbl(x, ~sum(politeness_dict$p[politeness_dict$term %in% 
 ##         .x], na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x0000000029480680&gt;
+## &lt;bytecode: 0x000000002946dde0&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $first_person
@@ -515,7 +516,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     fp &lt;- c(&quot;i&quot;, &quot;me&quot;, &quot;myself&quot;, &quot;my&quot;, &quot;mine&quot;, &quot;this&quot;)
 ##     purrr::map_int(x, ~sum(fp %in% .x, na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x000000002947fed8&gt;
+## &lt;bytecode: 0x000000002946d638&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $first_personp
@@ -524,7 +525,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     fp &lt;- c(&quot;we&quot;, &quot;us&quot;, &quot;our&quot;, &quot;ours&quot;, &quot;these&quot;)
 ##     purrr::map_int(x, ~sum(fp %in% .x, na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x000000002947f730&gt;
+## &lt;bytecode: 0x000000002946ce90&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $second_person
@@ -533,7 +534,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     fp &lt;- c(&quot;you&quot;, &quot;yours&quot;, &quot;your&quot;, &quot;yourself&quot;)
 ##     purrr::map_int(x, ~sum(fp %in% .x, na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x0000000029482df0&gt;
+## &lt;bytecode: 0x0000000029470550&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $second_personp
@@ -542,7 +543,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##     fp &lt;- c(&quot;he&quot;, &quot;she&quot;, &quot;it&quot;, &quot;its&quot;, &quot;his&quot;, &quot;hers&quot;)
 ##     purrr::map_int(x, ~sum(fp %in% .x, na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x00000000294826b8&gt;
+## &lt;bytecode: 0x000000002946fe18&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $third_person
@@ -552,7 +553,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##         &quot;those&quot;, &quot;that&quot;)
 ##     purrr::map_int(x, ~sum(fp %in% .x, na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x0000000029481f10&gt;
+## &lt;bytecode: 0x000000002946f670&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $to_be
@@ -562,7 +563,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##         &quot;be&quot;, &quot;were&quot;, &quot;be&quot;)
 ##     purrr::map_int(x, ~sum(fp %in% .x, na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x00000000294816f8&gt;
+## &lt;bytecode: 0x000000002946ee20&gt;
 ## &lt;environment: namespace:textfeatures&gt;
 ## 
 ## $prepositions
@@ -579,7 +580,7 @@ include product and user information, ratings, and a plaintext review.</p>
 ##         &quot;to&quot;, &quot;for&quot;)
 ##     purrr::map_int(x, ~sum(fp %in% .x, na.rm = TRUE))
 ## }
-## &lt;bytecode: 0x0000000029484ca0&gt;
+## &lt;bytecode: 0x00000000294742e8&gt;
 ## &lt;environment: namespace:textfeatures&gt;</code></pre>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(count_functions)</span></code></pre></div>
 <pre><code>##  [1] &quot;n_words&quot;        &quot;n_uq_words&quot;     &quot;n_charS&quot;        &quot;n_uq_charS&quot;    
@@ -976,23 +977,26 @@ include product and user information, ratings, and a plaintext review.</p>
 ## #   hash0022 &lt;dbl&gt;, hash0023 &lt;dbl&gt;, hash0024 &lt;dbl&gt;, hash0025 &lt;dbl&gt;,
 ## #   hash0026 &lt;dbl&gt;, hash0027 &lt;dbl&gt;, hash0028 &lt;dbl&gt;, hash0029 &lt;dbl&gt;,
 ## #   hash0030 &lt;dbl&gt;, hash0031 &lt;dbl&gt;, hash0032 &lt;dbl&gt;, hash0033 &lt;dbl&gt;, ...</code></pre>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">recipe</span>(score <span class="sc">~</span> product <span class="sc">+</span> review, <span class="at">data =</span> training_data) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update_role</span>(product, <span class="at">new_role =</span> <span class="st">&quot;id&quot;</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_mutate</span>(<span class="at">review_raw =</span> review) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_textfeature</span>(review_raw) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rename_at</span>(</span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">starts_with</span>(<span class="st">&quot;textfeature_&quot;</span>),</span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">fn =</span> <span class="sc">~</span> <span class="fu">gsub</span>(<span class="st">&quot;textfeature_review_raw_&quot;</span>, <span class="st">&quot;&quot;</span>, .)</span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_tokenize</span>(review) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_stopwords</span>(review) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_stem</span>(review) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_texthash</span>(<span class="st">&#39;review&#39;</span>, <span class="at">signed =</span> <span class="cn">TRUE</span>, <span class="at">num_terms =</span> <span class="fu">tune</span>()) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rename_at</span>(<span class="fu">starts_with</span>(<span class="st">&quot;review_hash&quot;</span>), <span class="at">fn =</span> <span class="sc">~</span> <span class="fu">gsub</span>(<span class="st">&quot;review_&quot;</span>,<span class="st">&quot;&quot;</span>, .)) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_mutate_at</span>(<span class="fu">starts_with</span>(<span class="st">&quot;hash&quot;</span>), <span class="at">fn =</span> binary_hash) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_YeoJohnson</span>(<span class="fu">one_of</span>(<span class="sc">!!</span>basics)) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_zv</span>(<span class="fu">all_predictors</span>()) <span class="sc">%&gt;%</span> </span>
-<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(<span class="fu">all_predictors</span>())</span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>pre_proc <span class="ot">&lt;-</span> </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">recipe</span>(score <span class="sc">~</span> product <span class="sc">+</span> review, <span class="at">data =</span> training_data) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update_role</span>(product, <span class="at">new_role =</span> <span class="st">&quot;id&quot;</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_mutate</span>(<span class="at">review_raw =</span> review) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_textfeature</span>(review_raw) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rename_at</span>(</span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">starts_with</span>(<span class="st">&quot;textfeature_&quot;</span>),</span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">fn =</span> <span class="sc">~</span> <span class="fu">gsub</span>(<span class="st">&quot;textfeature_review_raw_&quot;</span>, <span class="st">&quot;&quot;</span>, .)</span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_tokenize</span>(review) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_stopwords</span>(review) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_stem</span>(review) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_texthash</span>(<span class="st">&#39;review&#39;</span>, <span class="at">signed =</span> <span class="cn">TRUE</span>, <span class="at">num_terms =</span> <span class="fu">tune</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_rename_at</span>(<span class="fu">starts_with</span>(<span class="st">&quot;review_hash&quot;</span>), <span class="at">fn =</span> <span class="sc">~</span> <span class="fu">gsub</span>(<span class="st">&quot;review_&quot;</span>,<span class="st">&quot;&quot;</span>, .)) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_mutate_at</span>(<span class="fu">starts_with</span>(<span class="st">&quot;hash&quot;</span>), <span class="at">fn =</span> binary_hash) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_YeoJohnson</span>(<span class="fu">one_of</span>(<span class="sc">!!</span>basics)) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_zv</span>(<span class="fu">all_predictors</span>()) <span class="sc">%&gt;%</span> </span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_normalize</span>(<span class="fu">all_predictors</span>())</span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>pre_proc</span></code></pre></div>
 <pre><code>## Recipe
 ## 
 ## Inputs:
@@ -1074,13 +1078,767 @@ include product and user information, ratings, and a plaintext review.</p>
 </div>
 <div id="grid-search" class="section level2">
 <h2>Grid search</h2>
-<p>[그리드 검색][<a href="https://www.tidymodels.org/learn/work/tune-svm/" class="uri">https://www.tidymodels.org/learn/work/tune-svm/</a>] 과 일반 그리드로 튜닝을 시작합시다 . glmnet 모델의 경우 “submodel-trick” 을 사용하기 때문에 패널티 값을 평가하는 것이 상당히 저렴 합니다. 그리드는 20개의 페널티 값, 5개의 혼합 값 및 3개의 값을 해시 기능 수로 사용합니다.</p>
+<p>그리드 검색(<a href="https://www.tidymodels.org/learn/work/tune-svm/" class="uri">https://www.tidymodels.org/learn/work/tune-svm/</a>) 과 일반 그리드로 튜닝을 시작합시다 . glmnet 모델의 경우 “submodel-trick”(<a href="https://tune.tidymodels.org/articles/extras/optimizations.html#sub-model-speed-ups-1" class="uri">https://tune.tidymodels.org/articles/extras/optimizations.html#sub-model-speed-ups-1</a>) 을 사용하기 때문에 패널티 값을 평가하는 것이 상당히 작습니다. 그리드는 20개의 페널티 값, 5개의 혼합 값 및 3개의 값을 해시 기능 수로 사용합니다.</p>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>five_star_grid <span class="ot">&lt;-</span> </span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">crossing</span>(</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">penalty =</span> <span class="dv">10</span><span class="sc">^</span><span class="fu">seq</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">0</span>, <span class="at">length =</span> <span class="dv">30</span>),</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">mixture =</span> <span class="fu">c</span>(<span class="fl">0.01</span>, <span class="fl">0.25</span>, <span class="fl">0.50</span>, <span class="fl">0.75</span>, <span class="dv">1</span>),</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_terms =</span> <span class="dv">2</span><span class="sc">^</span><span class="fu">c</span>(<span class="dv">8</span>, <span class="dv">10</span>, <span class="dv">12</span>)</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>five_star_grid</span></code></pre></div>
+<pre><code>## # A tibble: 450 x 3
+##    penalty mixture num_terms
+##      &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt;
+##  1   0.001    0.01       256
+##  2   0.001    0.01      1024
+##  3   0.001    0.01      4096
+##  4   0.001    0.25       256
+##  5   0.001    0.25      1024
+##  6   0.001    0.25      4096
+##  7   0.001    0.5        256
+##  8   0.001    0.5       1024
+##  9   0.001    0.5       4096
+## 10   0.001    0.75       256
+## # ... with 440 more rows</code></pre>
+<p>각 resample에 대해 (계산 비용이 많이 드는) 텍스트 전처리 레시피는 6번만 준비됩니다. 이는 중복 작업을 방지하여 분석의 효율성을 높입니다.</p>
+<p>각 glmnet 모델에 대한 패널티 값으로 예측 변수의 수에 대한 정보를 저장합시다. 이는 패널티 값에서 사용된 기능의 수를 이해하는 데 도움이 됩니다. 추출 기능을 사용하여 다음을 수행하십시오.</p>
+<p><strong>x</strong> will be a workflow object<br />
+<strong>df</strong> is the number of model terms for each penalty value</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>glmnet_vars <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  mod <span class="ot">&lt;-</span> <span class="fu">extract_model</span>(x)</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">penalty =</span> mod<span class="sc">$</span>lambda, <span class="at">num_vars =</span> mod<span class="sc">$</span>df)</span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>ctrl <span class="ot">&lt;-</span> <span class="fu">control_grid</span>(<span class="at">extract =</span> glmnet_vars, <span class="at">verbose =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p>이제 Grid search를 실행해 보자.</p>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>roc_scores <span class="ot">&lt;-</span> <span class="fu">metric_set</span>(roc_auc)</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>roc_scores</span></code></pre></div>
+<pre><code>## # A tibble: 1 x 3
+##   metric  class       direction
+##   &lt;chr&gt;   &lt;chr&gt;       &lt;chr&gt;    
+## 1 roc_auc prob_metric maximize</code></pre>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a>doParallel<span class="sc">::</span><span class="fu">registerDoParallel</span>()</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1559</span>)</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>five_star_glmnet <span class="ot">&lt;-</span> </span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tune_grid</span>(</span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">object =</span> lr_mod,</span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">preprocessor =</span> pre_proc,</span>
+<span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">resamples =</span> folds,</span>
+<span id="cb55-10"><a href="#cb55-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">grid =</span> five_star_grid,</span>
+<span id="cb55-11"><a href="#cb55-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">metrics =</span> roc_scores,</span>
+<span id="cb55-12"><a href="#cb55-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">control =</span> ctrl</span>
+<span id="cb55-13"><a href="#cb55-13" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb55-14"><a href="#cb55-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-15"><a href="#cb55-15" aria-hidden="true" tabindex="-1"></a>five_star_glmnet</span></code></pre></div>
+<pre><code>## Warning: This tuning result has notes. Example notes on model fitting include:
+## internal: `extract_model()` was deprecated in tune 0.1.6.
+## Please use `extract_fit_engine()` instead.
+## internal: `extract_model()` was deprecated in tune 0.1.6.
+## Please use `extract_fit_engine()` instead.
+## internal: `extract_model()` was deprecated in tune 0.1.6.
+## Please use `extract_fit_engine()` instead.</code></pre>
+<pre><code>## # Tuning results
+## # 10-fold cross-validation 
+## # A tibble: 10 x 5
+##    splits             id     .metrics           .notes           .extracts      
+##    &lt;list&gt;             &lt;chr&gt;  &lt;list&gt;             &lt;list&gt;           &lt;list&gt;         
+##  1 &lt;split [3600/400]&gt; Fold01 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  2 &lt;split [3600/400]&gt; Fold02 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  3 &lt;split [3600/400]&gt; Fold03 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  4 &lt;split [3600/400]&gt; Fold04 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  5 &lt;split [3600/400]&gt; Fold05 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  6 &lt;split [3600/400]&gt; Fold06 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  7 &lt;split [3600/400]&gt; Fold07 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  8 &lt;split [3600/400]&gt; Fold08 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+##  9 &lt;split [3600/400]&gt; Fold09 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~
+## 10 &lt;split [3600/400]&gt; Fold10 &lt;tibble [450 x 7]&gt; &lt;tibble [1 x 1]&gt; &lt;tibble [450 x~</code></pre>
+<p>완료하는 데 시간이 걸렸습니다! 결과는 어떻게 됩니까? 각 조정 매개변수에 대한 ROC 곡선 아래 영역의 리샘플링 추정치를 구해 보겠습니다.</p>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>grid_roc <span class="ot">&lt;-</span> </span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>(five_star_glmnet) <span class="sc">%&gt;%</span> </span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(mean))</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>grid_roc</span></code></pre></div>
+<pre><code>## # A tibble: 450 x 9
+##    penalty mixture num_terms .metric .estimator  mean     n std_err .config     
+##      &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;   &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;       
+##  1  0.621     0.01      4096 roc_auc binary     0.818    10 0.00744 Preprocesso~
+##  2  0.489     0.01      4096 roc_auc binary     0.818    10 0.00773 Preprocesso~
+##  3  0.788     0.01      4096 roc_auc binary     0.817    10 0.00735 Preprocesso~
+##  4  0.386     0.01      4096 roc_auc binary     0.816    10 0.00808 Preprocesso~
+##  5  0.0356    0.25      4096 roc_auc binary     0.816    10 0.00759 Preprocesso~
+##  6  0.0452    0.25      4096 roc_auc binary     0.815    10 0.00756 Preprocesso~
+##  7  0.304     0.01      4096 roc_auc binary     0.814    10 0.00830 Preprocesso~
+##  8  0.0174    0.5       4096 roc_auc binary     0.814    10 0.00779 Preprocesso~
+##  9  0.0221    0.5       4096 roc_auc binary     0.814    10 0.00776 Preprocesso~
+## 10  0.0281    0.25      4096 roc_auc binary     0.813    10 0.00787 Preprocesso~
+## # ... with 440 more rows</code></pre>
+<p>최상의 결과는 상당히 높은 패널티 값을 가지며 ridge 패널티에 초점을 맞춥니다(즉, lasso의 L1 패널티를 통해 features 선택이 없음). 최고의 솔루션은 또한 가장 많은 해싱 값을 가지고 있다.</p>
+<p>성능과 조정 매개변수 사이의 관계는 무엇입니까?</p>
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(five_star_glmnet, <span class="at">metric =</span> <span class="st">&quot;roc_auc&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<ul>
+<li><p>포함된 feature의 수에 따라 성능이 향상된다는 것을 확실히 알 수 있습니다. 위 예시에서는 사용 가능한 전체 데이터 세트의 작은 샘플을 사용했습니다. 더 많은 데이터가 사용되면 더 큰 feature set이 최적입니다.</p></li>
+<li><p>mixture 값이 더 큰(0.01보다 큰) 프로파일은 성능이 급격히 떨어집니다. 그게 뭐야? lasso penalty가 모델에서 너무 많은(아마도 모든) feature를 제거하는 경우입니다.</p></li>
+<li><p>4096개 이상의 기능이 있는 패널은 성능이 거의 동일한 여러 매개변수 조합이 있음을 보여줍니다. 다른 mixture 값에 대한 최상의 성능 사이에는 큰 차이가 없습니다. 더 적은 수의 예측 변수를 포함하는 더 단순한 모델을 선택하기 위해 더 큰 혼합 값과 더 작은 페널티를 선택 해야 하는 경우가 만들어질 수 있습니다.</p></li>
+<li><p>더 많은 실험이 수행된 경우 더 큰 feature set(4096개 이상)도 고려해야 합니다.</p></li>
+</ul>
+<p>이 문서의 끝에 위에서 추출해 둔 glmnet component를 사용할 것이다.</p>
 </div>
 <div id="directed-search" class="section level2">
 <h2>Directed search</h2>
-</div>
-<div id="extracted-results" class="section level2">
-<h2>Extracted results</h2>
+<p>베이지안 최적화로 시작했다면 어떨까요? 좋은 조건 세트가 더 효율적으로 발견되었을까요?</p>
+<p>그리드 검색 결과를 보지 못했다고 가정해 봅시다. 공간 채우기 설계로 선택한 5가지 조정 매개변수 조합으로 가우스 프로세스 모델을 초기화합니다.</p>
+<p>해시 용어의 수에 대해 custom한 <code>dials</code> 개체를 사용하는 것이 좋습니다 . 기본 개체인 <code>num_terms()</code>은 선형 범위를 사용하고 데이터를 사용하여 매개변수의 상한을 설정하려고 합니다. 대신에 매개변수 집합을 만들고 눈금을 <code>log2</code> 로 변경하고, 그리드 검색에서 사용된 것과 동일한 범위를 정의해 보겠습니다.</p>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="co"># grid search:  num_terms = 2^c(8, 10, 12)</span></span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>hash_range <span class="ot">&lt;-</span> <span class="fu">num_terms</span>(<span class="fu">c</span>(<span class="dv">8</span>, <span class="dv">12</span>), <span class="at">trans =</span> <span class="fu">log2_trans</span>())</span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>hash_range</span></code></pre></div>
+<pre><code>## # Model Terms (quantitative)
+## Transformer:  log-2 
+## Range (transformed scale): [8, 12]</code></pre>
+<p>이를 사용하려면 레시피와 <code>parsnip</code> 모델 개체를 워크플로에 병합해야 합니다. 이전에는 workflow를 만들지 않고 recipe에 바로 lr_mod를 사용했음.</p>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>five_star_wflow <span class="ot">&lt;-</span> </span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">workflow</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(pre_proc) <span class="sc">%&gt;%</span> </span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(lr_mod)</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>five_star_wflow</span></code></pre></div>
+<pre><code>## == Workflow ====================================================================
+## Preprocessor: Recipe
+## Model: logistic_reg()
+## 
+## -- Preprocessor ----------------------------------------------------------------
+## 12 Recipe Steps
+## 
+## * step_mutate()
+## * step_textfeature()
+## * step_rename_at()
+## * step_tokenize()
+## * step_stopwords()
+## * step_stem()
+## * step_texthash()
+## * step_rename_at()
+## * step_mutate_at()
+## * step_YeoJohnson()
+## * ...
+## * and 2 more steps.
+## 
+## -- Model -----------------------------------------------------------------------
+## Logistic Regression Model Specification (classification)
+## 
+## Main Arguments:
+##   penalty = tune()
+##   mixture = tune()
+## 
+## Computational engine: glmnet</code></pre>
+<p>그런 다음 해당 매개변수 세트를 추출하고 조작할 수 있습니다.</p>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>five_star_wflow <span class="sc">%&gt;%</span> </span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">parameters</span>()</span></code></pre></div>
+<pre><code>## Collection of 3 parameters for tuning
+## 
+##  identifier      type    object
+##     penalty   penalty nparam[+]
+##     mixture   mixture nparam[+]
+##   num_terms num_terms nparam[+]</code></pre>
+<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>five_star_wflow <span class="sc">%&gt;%</span> </span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">parameters</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update</span>(</span>
+<span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_terms =</span> hash_range,</span>
+<span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">penalty =</span> <span class="fu">penalty</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">0</span>)),</span>
+<span id="cb67-6"><a href="#cb67-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">mixture =</span> <span class="fu">mixture</span>(<span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">1.00</span>))</span>
+<span id="cb67-7"><a href="#cb67-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> <span class="fu">pull</span>()</span></code></pre></div>
+<pre><code>## [[1]]
+## Amount of Regularization (quantitative)
+## Transformer:  log-10 
+## Range (transformed scale): [-3, 0]
+## 
+## [[2]]
+## Proportion of Lasso Penalty (quantitative)
+## Range: [0.05, 1]
+## 
+## [[3]]
+## # Model Terms (quantitative)
+## Transformer:  log-2 
+## Range (transformed scale): [8, 12]</code></pre>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a>five_star_set <span class="ot">&lt;-</span> </span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>  five_star_wflow <span class="sc">%&gt;%</span> </span>
+<span id="cb69-3"><a href="#cb69-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">parameters</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb69-4"><a href="#cb69-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update</span>(</span>
+<span id="cb69-5"><a href="#cb69-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">num_terms =</span> hash_range,</span>
+<span id="cb69-6"><a href="#cb69-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">penalty =</span> <span class="fu">penalty</span>(<span class="fu">c</span>(<span class="sc">-</span><span class="dv">3</span>, <span class="dv">0</span>)),</span>
+<span id="cb69-7"><a href="#cb69-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">mixture =</span> <span class="fu">mixture</span>(<span class="fu">c</span>(<span class="fl">0.05</span>, <span class="fl">1.00</span>))</span>
+<span id="cb69-8"><a href="#cb69-8" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb69-9"><a href="#cb69-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb69-10"><a href="#cb69-10" aria-hidden="true" tabindex="-1"></a>five_star_set</span></code></pre></div>
+<pre><code>## Collection of 3 parameters for tuning
+## 
+##  identifier      type    object
+##     penalty   penalty nparam[+]
+##     mixture   mixture nparam[+]
+##   num_terms num_terms nparam[+]</code></pre>
+<p>이것은 <code>param_info</code>인수 를 통해 검색 기능에 전달됩니다.</p>
+<p>초기 검색 라운드는 매개변수 공간 탐색에 더 치우칠 수 있습니다(현재 최상의 결과 근처에 머무르는 것과 반대). 예상되는 개선이 획득 기능으로 사용되는 경우 트레이드오프 값은 반복을 통해 탐색에서 활용으로 천천히 이동할 수 있습니다. ( 자세한 내용은 획득 기능(<a href="https://tune.tidymodels.org/articles/acquisition_functions.html" class="uri">https://tune.tidymodels.org/articles/acquisition_functions.html</a>) 에 대한 조정 비네트 참조). tune 패키지에는 이를 수행하는 데 도움 이 되는 내장 함수 <code>expo_decay()</code> 가 있습니다.</p>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>trade_off_decay <span class="ot">&lt;-</span> <span class="cf">function</span>(iter) {</span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">expo_decay</span>(iter, <span class="at">start_val =</span> <span class="fl">0.01</span>, <span class="at">limit_val =</span> <span class="dv">0</span>, <span class="at">slope =</span> <span class="dv">1</span><span class="sc">/</span><span class="dv">4</span>)</span>
+<span id="cb71-3"><a href="#cb71-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>이 값들을 이용해서 검색을 실행해보자.</p>
+<div class="sourceCode" id="cb72"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">12</span>)</span>
+<span id="cb72-2"><a href="#cb72-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb72-3"><a href="#cb72-3" aria-hidden="true" tabindex="-1"></a>five_star_search <span class="ot">&lt;-</span> </span>
+<span id="cb72-4"><a href="#cb72-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tune_bayes</span>(</span>
+<span id="cb72-5"><a href="#cb72-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">object =</span> five_star_wflow,</span>
+<span id="cb72-6"><a href="#cb72-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">resamples =</span> folds,</span>
+<span id="cb72-7"><a href="#cb72-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">iter =</span> <span class="dv">30</span>,</span>
+<span id="cb72-8"><a href="#cb72-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">param_info =</span> five_star_set,</span>
+<span id="cb72-9"><a href="#cb72-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">initial =</span> <span class="dv">5</span>,</span>
+<span id="cb72-10"><a href="#cb72-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">metrics =</span> roc_scores,</span>
+<span id="cb72-11"><a href="#cb72-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">objective =</span> <span class="fu">exp_improve</span>(trade_off_decay),</span>
+<span id="cb72-12"><a href="#cb72-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">control =</span> <span class="fu">control_bayes</span>(<span class="at">verbose =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb72-13"><a href="#cb72-13" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div>
+<pre><code>## </code></pre>
+<pre><code>## &gt;  Generating a set of 5 initial parameter results</code></pre>
+<pre><code>## √ Initialization complete</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## Optimizing roc_auc using the expected improvement with variable trade-off
+## values.</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 1 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7559 (@iter 0)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.01</code></pre>
+<pre><code>## i penalty=0.00251, mixture=0.0528, num_terms=260</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7475 (+/-0.0102)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 2 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7559 (@iter 0)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.007788</code></pre>
+<pre><code>## i penalty=0.00389, mixture=0.616, num_terms=489</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.7753 (+/-0.009)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 3 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7753 (@iter 2)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.006065</code></pre>
+<pre><code>## i penalty=0.00101, mixture=0.463, num_terms=517</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7456 (+/-0.0107)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 4 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7753 (@iter 2)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.004724</code></pre>
+<pre><code>## i penalty=0.00112, mixture=0.807, num_terms=4072</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7703 (+/-0.00716)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 5 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7753 (@iter 2)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.003679</code></pre>
+<pre><code>## i penalty=0.00343, mixture=0.523, num_terms=4038</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7751 (+/-0.00694)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 6 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7753 (@iter 2)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.002865</code></pre>
+<pre><code>## i penalty=0.00306, mixture=0.989, num_terms=1251</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.7859 (+/-0.00933)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 7 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7859 (@iter 6)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.002231</code></pre>
+<pre><code>## i penalty=0.0174, mixture=0.991, num_terms=2349</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.7981 (+/-0.0078)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 8 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.7981 (@iter 7)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.001738</code></pre>
+<pre><code>## i penalty=0.011, mixture=0.999, num_terms=1832</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.8022 (+/-0.00809)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 9 -----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8022 (@iter 8)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.001353</code></pre>
+<pre><code>## i penalty=0.00632, mixture=0.943, num_terms=2806</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.8035 (+/-0.0047)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 10 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8035 (@iter 9)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.001054</code></pre>
+<pre><code>## i penalty=0.00701, mixture=0.969, num_terms=3717</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.8034 (+/-0.0061)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 11 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8035 (@iter 9)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0008208</code></pre>
+<pre><code>## i penalty=0.00554, mixture=0.99, num_terms=3414</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.8028 (+/-0.00628)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 12 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8035 (@iter 9)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0006393</code></pre>
+<pre><code>## i penalty=0.0137, mixture=0.987, num_terms=3233</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.8162 (+/-0.00823)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 13 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8162 (@iter 12)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0004979</code></pre>
+<pre><code>## i penalty=0.0136, mixture=0.967, num_terms=290</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7445 (+/-0.00702)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 14 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8162 (@iter 12)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0003877</code></pre>
+<pre><code>## i penalty=0.0143, mixture=0.921, num_terms=4085</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.814 (+/-0.00775)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 15 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8162 (@iter 12)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.000302</code></pre>
+<pre><code>## i penalty=0.013, mixture=0.973, num_terms=3974</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.8099 (+/-0.00471)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 16 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8162 (@iter 12)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0002352</code></pre>
+<pre><code>## i penalty=0.0148, mixture=0.0565, num_terms=3023</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7757 (+/-0.00876)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 17 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8162 (@iter 12)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0001832</code></pre>
+<pre><code>## i penalty=0.0139, mixture=0.992, num_terms=3427</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.8021 (+/-0.00829)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 18 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8162 (@iter 12)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0001426</code></pre>
+<pre><code>## i penalty=0.152, mixture=0.0898, num_terms=3286</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.8206 (+/-0.00922)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 19 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8206 (@iter 18)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 0.0001111</code></pre>
+<pre><code>## i penalty=0.0978, mixture=0.121, num_terms=3755</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.8206 (+/-0.00836)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 20 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8206 (@iter 19)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 8.652e-05</code></pre>
+<pre><code>## i penalty=0.575, mixture=0.156, num_terms=366</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.5</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 21 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8206 (@iter 19)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 6.738e-05</code></pre>
+<pre><code>## i penalty=0.0705, mixture=0.108, num_terms=2883</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## &lt;3 Newest results:   roc_auc=0.8314 (+/-0.00731)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 22 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 5.248e-05</code></pre>
+<pre><code>## i penalty=0.00145, mixture=0.654, num_terms=2857</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7585 (+/-0.0102)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 23 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 4.087e-05</code></pre>
+<pre><code>## i penalty=0.0633, mixture=0.26, num_terms=297</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7461 (+/-0.00837)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 24 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 3.183e-05</code></pre>
+<pre><code>## i penalty=0.00393, mixture=0.421, num_terms=257</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7489 (+/-0.00842)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 25 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 2.479e-05</code></pre>
+<pre><code>## i penalty=0.0129, mixture=0.16, num_terms=2730</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7876 (+/-0.00503)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 26 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 1.93e-05</code></pre>
+<pre><code>## i penalty=0.0659, mixture=0.0836, num_terms=3179</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.8094 (+/-0.00417)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 27 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 1.503e-05</code></pre>
+<pre><code>## i penalty=0.181, mixture=0.13, num_terms=2383</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7755 (+/-0.0098)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 28 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 1.171e-05</code></pre>
+<pre><code>## i penalty=0.257, mixture=0.622, num_terms=3937</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.5</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 29 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 9.119e-06</code></pre>
+<pre><code>## i penalty=0.0122, mixture=0.103, num_terms=744</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.7777 (+/-0.00696)</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## -- Iteration 30 ----------------------------------------------------------------</code></pre>
+<pre><code>## </code></pre>
+<pre><code>## i Current best:      roc_auc=0.8314 (@iter 21)</code></pre>
+<pre><code>## i Gaussian process model</code></pre>
+<pre><code>## √ Gaussian process model</code></pre>
+<pre><code>## i Generating 5000 candidates</code></pre>
+<pre><code>## i Predicted candidates</code></pre>
+<pre><code>## i Trade-off value: 7.102e-06</code></pre>
+<pre><code>## i penalty=0.00135, mixture=0.0737, num_terms=3215</code></pre>
+<pre><code>## i Estimating performance</code></pre>
+<pre><code>## √ Estimating performance</code></pre>
+<pre><code>## (x) Newest results:  roc_auc=0.726 (+/-0.0066)</code></pre>
+<p>이 결과는 초기 세트보다 약간의 개선을 보여줍니다. 한 가지 문제는 너무 많은 설정이 최적이 아니어서(위의 그리드 검색 플롯에 표시된 대로) 주기적으로 좋지 않은 결과가 나온다는 것입니다. 패널티 매개변수가 너무 커져 모든 예측 변수가 모델에서 제거되는 영역이 있습니다. 이 영역은 또한 항의 수에 따라 다릅니다. 좋은 성능을 얻을 수 있는 상당히 좁은 능선이 있습니다(죄송합니다. 말장난입니다!). 더 많은 반복을 사용하면 검색에서 더 나은 결과를 얻을 수 있습니다. 모델 성능 대 검색 반복의 플롯을 살펴보겠습니다.</p>
+<div class="sourceCode" id="cb468"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb468-1"><a href="#cb468-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(five_star_search, <span class="at">type =</span> <span class="st">&quot;performance&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>```` 그리드 검색 결과에 대해 알고 있고 방향성 있는 반복 검색을 시도하고 싶다면 어떻게 해야 할까요? 해시 기능 수의 범위를 더 크게 제한합니다(특히 데이터가 많을수록). 페널티 및 혼합 매개변수가 하한 상한을 갖도록 제한할 수도 있습니다.</p>
+<pre><code>
+## Extracted results
+
+그리드 검색 결과로 돌아가서 `extract` 함수 의 결과를 살펴보겠습니다 . 각 적합 모델 에 대해 예측 변수의 수와 패널티 값 사이의 관계를 포함하는 tibble이 저장되었습니다. 최상의 모델에 대한 다음 결과를 살펴보겠습니다.  
+
+
+```r
+params &lt;- select_best(five_star_glmnet, metric = &quot;roc_auc&quot;)
+
+params</code></pre>
+<pre><code>## # A tibble: 1 x 4
+##   penalty mixture num_terms .config               
+##     &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;                 
+## 1   0.621    0.01      4096 Preprocessor3_Model028</code></pre>
+<p>glmnet 결과를 tibble에 저장했음을 기억하십시오. <code>five_star_glmnet$.extracts</code>열은 tibbles의 목록입니다. 예를 들어 목록의 첫 번째 요소는 다음과 같습니다.</p>
+<div class="sourceCode" id="cb471"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb471-1"><a href="#cb471-1" aria-hidden="true" tabindex="-1"></a>five_star_glmnet<span class="sc">$</span>.extracts[[<span class="dv">1</span>]]</span></code></pre></div>
+<pre><code>## # A tibble: 450 x 5
+##    num_terms penalty mixture .extracts          .config               
+##        &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;list&gt;             &lt;chr&gt;                 
+##  1       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model001
+##  2       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model002
+##  3       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model003
+##  4       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model004
+##  5       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model005
+##  6       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model006
+##  7       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model007
+##  8       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model008
+##  9       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model009
+## 10       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model010
+## # ... with 440 more rows</code></pre>
+<p>더 많은 중첩된 tibbles을 보자! <code>unnest()</code>를 사용하여 <code>five_star_glmnet$.extracts</code>열을 보면:</p>
+<div class="sourceCode" id="cb473"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb473-1"><a href="#cb473-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb473-2"><a href="#cb473-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb473-3"><a href="#cb473-3" aria-hidden="true" tabindex="-1"></a>extracted <span class="ot">&lt;-</span> </span>
+<span id="cb473-4"><a href="#cb473-4" aria-hidden="true" tabindex="-1"></a>  five_star_glmnet <span class="sc">%&gt;%</span> </span>
+<span id="cb473-5"><a href="#cb473-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(id, .extracts) <span class="sc">%&gt;%</span> </span>
+<span id="cb473-6"><a href="#cb473-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(<span class="at">cols =</span> .extracts)</span>
+<span id="cb473-7"><a href="#cb473-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb473-8"><a href="#cb473-8" aria-hidden="true" tabindex="-1"></a>extracted</span></code></pre></div>
+<pre><code>## # A tibble: 4,500 x 6
+##    id     num_terms penalty mixture .extracts          .config               
+##    &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;list&gt;             &lt;chr&gt;                 
+##  1 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model001
+##  2 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model002
+##  3 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model003
+##  4 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model004
+##  5 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model005
+##  6 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model006
+##  7 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model007
+##  8 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model008
+##  9 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model009
+## 10 Fold01       256       1    0.01 &lt;tibble [100 x 2]&gt; Preprocessor1_Model010
+## # ... with 4,490 more rows</code></pre>
+<p>여기서 깨달아야 할 한 가지는 <code>tune_grid()</code> 모든 모델에 적합하지 않을 수 있다는 것 입니다.(<a href="https://tune.tidymodels.org/articles/extras/optimizations.html" class="uri">https://tune.tidymodels.org/articles/extras/optimizations.html</a>)</p>
+<p>이 경우 <code>mixture</code>및 의 각 값에 <code>num_terms</code>대해 모델은 모든 페널티 값에 적합합니다(이는 이 특정 모델의 기능이며 일반적으로 다른 엔진에는 해당되지 않음). 최상의 매개변수 집합을 선택하기 위해 <code>extracted</code>에서 penalty열을 제외할 수 있습니다.</p>
+<div class="sourceCode" id="cb475"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb475-1"><a href="#cb475-1" aria-hidden="true" tabindex="-1"></a>params <span class="sc">%&gt;%</span> <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>## # A tibble: 1 x 4
+##   penalty mixture num_terms .config               
+##     &lt;dbl&gt;   &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;                 
+## 1   0.621    0.01      4096 Preprocessor3_Model028</code></pre>
+<div class="sourceCode" id="cb477"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb477-1"><a href="#cb477-1" aria-hidden="true" tabindex="-1"></a>extracted <span class="sc">%&gt;%</span> </span>
+<span id="cb477-2"><a href="#cb477-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
+<span id="cb477-3"><a href="#cb477-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(params, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;num_terms&quot;</span>, <span class="st">&quot;mixture&quot;</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb477-4"><a href="#cb477-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>## # A tibble: 6 x 7
+##   id     num_terms mixture .extracts          .config.x     penalty .config.y   
+##   &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt; &lt;list&gt;             &lt;chr&gt;           &lt;dbl&gt; &lt;chr&gt;       
+## 1 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor~   0.621 Preprocesso~
+## 2 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor~   0.621 Preprocesso~
+## 3 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor~   0.621 Preprocesso~
+## 4 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor~   0.621 Preprocesso~
+## 5 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor~   0.621 Preprocesso~
+## 6 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor~   0.621 Preprocesso~</code></pre>
+<div class="sourceCode" id="cb479"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb479-1"><a href="#cb479-1" aria-hidden="true" tabindex="-1"></a>extracted <span class="sc">%&gt;%</span> </span>
+<span id="cb479-2"><a href="#cb479-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
+<span id="cb479-3"><a href="#cb479-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(params, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;num_terms&quot;</span>, <span class="st">&quot;mixture&quot;</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb479-4"><a href="#cb479-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
+<span id="cb479-5"><a href="#cb479-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>()</span></code></pre></div>
+<pre><code>## # A tibble: 6 x 6
+##   id     num_terms mixture .extracts          .config.x              .config.y  
+##   &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt; &lt;list&gt;             &lt;chr&gt;                  &lt;chr&gt;      
+## 1 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model001 Preprocess~
+## 2 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model002 Preprocess~
+## 3 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model003 Preprocess~
+## 4 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model004 Preprocess~
+## 5 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model005 Preprocess~
+## 6 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model006 Preprocess~</code></pre>
+<div class="sourceCode" id="cb481"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb481-1"><a href="#cb481-1" aria-hidden="true" tabindex="-1"></a>extracted <span class="ot">&lt;-</span> </span>
+<span id="cb481-2"><a href="#cb481-2" aria-hidden="true" tabindex="-1"></a>  extracted <span class="sc">%&gt;%</span> </span>
+<span id="cb481-3"><a href="#cb481-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>penalty) <span class="sc">%&gt;%</span> </span>
+<span id="cb481-4"><a href="#cb481-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(params, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">&quot;num_terms&quot;</span>, <span class="st">&quot;mixture&quot;</span>)) <span class="sc">%&gt;%</span> </span>
+<span id="cb481-5"><a href="#cb481-5" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>penalty)</span>
+<span id="cb481-6"><a href="#cb481-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb481-7"><a href="#cb481-7" aria-hidden="true" tabindex="-1"></a>extracted</span></code></pre></div>
+<pre><code>## # A tibble: 300 x 6
+##    id     num_terms mixture .extracts          .config.x              .config.y 
+##    &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt; &lt;list&gt;             &lt;chr&gt;                  &lt;chr&gt;     
+##  1 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model001 Preproces~
+##  2 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model002 Preproces~
+##  3 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model003 Preproces~
+##  4 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model004 Preproces~
+##  5 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model005 Preproces~
+##  6 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model006 Preproces~
+##  7 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model007 Preproces~
+##  8 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model008 Preproces~
+##  9 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model009 Preproces~
+## 10 Fold01      4096    0.01 &lt;tibble [100 x 2]&gt; Preprocessor3_Model010 Preproces~
+## # ... with 290 more rows</code></pre>
+<p>이제 <code>unnest()</code>를 한 번 더 사용하여 원하는 결과를 얻을 수 있다.</p>
+<div class="sourceCode" id="cb483"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb483-1"><a href="#cb483-1" aria-hidden="true" tabindex="-1"></a>extracted <span class="ot">&lt;-</span> </span>
+<span id="cb483-2"><a href="#cb483-2" aria-hidden="true" tabindex="-1"></a>  extracted <span class="sc">%&gt;%</span> </span>
+<span id="cb483-3"><a href="#cb483-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unnest</span>(<span class="at">col =</span> .extracts)</span>
+<span id="cb483-4"><a href="#cb483-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb483-5"><a href="#cb483-5" aria-hidden="true" tabindex="-1"></a>extracted</span></code></pre></div>
+<pre><code>## # A tibble: 30,000 x 7
+##    id     num_terms mixture penalty num_vars .config.x              .config.y   
+##    &lt;chr&gt;      &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt;    &lt;int&gt; &lt;chr&gt;                  &lt;chr&gt;       
+##  1 Fold01      4096    0.01    9.01        0 Preprocessor3_Model001 Preprocesso~
+##  2 Fold01      4096    0.01    8.60        1 Preprocessor3_Model001 Preprocesso~
+##  3 Fold01      4096    0.01    8.21        2 Preprocessor3_Model001 Preprocesso~
+##  4 Fold01      4096    0.01    7.84        2 Preprocessor3_Model001 Preprocesso~
+##  5 Fold01      4096    0.01    7.48        3 Preprocessor3_Model001 Preprocesso~
+##  6 Fold01      4096    0.01    7.14        3 Preprocessor3_Model001 Preprocesso~
+##  7 Fold01      4096    0.01    6.82        4 Preprocessor3_Model001 Preprocesso~
+##  8 Fold01      4096    0.01    6.51        6 Preprocessor3_Model001 Preprocesso~
+##  9 Fold01      4096    0.01    6.21        7 Preprocessor3_Model001 Preprocesso~
+## 10 Fold01      4096    0.01    5.93        7 Preprocessor3_Model001 Preprocesso~
+## # ... with 29,990 more rows</code></pre>
+<p>이 결과를 resample별로 그래프를 그려보자.</p>
+<div class="sourceCode" id="cb485"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb485-1"><a href="#cb485-1" aria-hidden="true" tabindex="-1"></a>extracted <span class="sc">%&gt;%</span> </span>
+<span id="cb485-2"><a href="#cb485-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> penalty, <span class="at">y =</span> num_vars)) <span class="sc">+</span></span>
+<span id="cb485-3"><a href="#cb485-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">group =</span> id, <span class="at">col =</span> id), <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb485-4"><a href="#cb485-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;penalty&quot;</span>, <span class="at">y =</span> <span class="st">&quot;Number of retained predictors&quot;</span>,</span>
+<span id="cb485-5"><a href="#cb485-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="fu">paste</span>(<span class="st">&quot;mixture = &quot;</span>, params<span class="sc">$</span>mixture, <span class="st">&quot;and&quot;</span>, params<span class="sc">$</span>num_terms, <span class="st">&quot;features&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb485-6"><a href="#cb485-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_log10</span>() <span class="sc">+</span></span>
+<span id="cb485-7"><a href="#cb485-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;none&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>이러한 결과는 더 많은 최적화가 수행된 경우 <code>penalty</code> 범위 선택을 안내하는 데 도움이 될 수 있습니다.</p>
+<p><br></p>
+<p><strong>END</strong></p>
 </div>
 </section>
 

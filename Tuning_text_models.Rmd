@@ -13,7 +13,10 @@ gc()
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
+  
+Source: https://www.tidymodels.org/learn/work/tune-text/  
+  
+  
 **학습목표**  
 
 Prepare text data for predictive modeling and tune with both grid and iterative search.  
@@ -568,10 +571,105 @@ autoplot(five_star_search, type = "performance")
 
 ```
 
-
-
 ## Extracted results
 
+그리드 검색 결과로 돌아가서 `extract` 함수 의 결과를 살펴보겠습니다 . 각 적합 모델 에 대해 예측 변수의 수와 패널티 값 사이의 관계를 포함하는 tibble이 저장되었습니다. 최상의 모델에 대한 다음 결과를 살펴보겠습니다.  
+
+```{r}
+params <- select_best(five_star_glmnet, metric = "roc_auc")
+
+params
+
+```
 
 
+glmnet 결과를 tibble에 저장했음을 기억하십시오. `five_star_glmnet$.extracts`열은 tibbles의 목록입니다. 예를 들어 목록의 첫 번째 요소는 다음과 같습니다.  
 
+```{r}
+five_star_glmnet$.extracts[[1]]
+
+```
+
+더 많은 중첩된 tibbles을 보자! `unnest()`를 사용하여 `five_star_glmnet$.extracts`열을 보면:
+
+```{r}
+library(tidyr)
+
+extracted <- 
+  five_star_glmnet %>% 
+  dplyr::select(id, .extracts) %>% 
+  unnest(cols = .extracts)
+
+extracted
+
+```
+
+여기서 깨달아야 할 한 가지는 `tune_grid()` 모든 모델에 적합하지 않을 수 있다는 것 입니다.(https://tune.tidymodels.org/articles/extras/optimizations.html)   
+
+이 경우 `mixture`및 의 각 값에 `num_terms`대해 모델은 모든 페널티 값에 적합합니다(이는 이 특정 모델의 기능이며 일반적으로 다른 엔진에는 해당되지 않음). 최상의 매개변수 집합을 선택하기 위해 `extracted`에서 penalty열을 제외할 수 있습니다.  
+
+
+```{r}
+params %>% head()
+
+```
+
+```{r}
+extracted %>% 
+  dplyr::select(-penalty) %>% 
+  inner_join(params, by = c("num_terms", "mixture")) %>% 
+  head()
+
+```
+
+```{r}
+extracted %>% 
+  dplyr::select(-penalty) %>% 
+  inner_join(params, by = c("num_terms", "mixture")) %>% 
+  dplyr::select(-penalty) %>% 
+  head()
+
+```
+
+
+```{r}
+extracted <- 
+  extracted %>% 
+  dplyr::select(-penalty) %>% 
+  inner_join(params, by = c("num_terms", "mixture")) %>% 
+  dplyr::select(-penalty)
+
+extracted
+
+
+```
+
+이제 `unnest()`를 한 번 더 사용하여 원하는 결과를 얻을 수 있다.  
+
+```{r}
+extracted <- 
+  extracted %>% 
+  unnest(col = .extracts)
+
+extracted
+```
+
+이 결과를 resample별로 그래프를 그려보자.  
+
+```{r}
+extracted %>% 
+  ggplot(aes(x = penalty, y = num_vars)) +
+  geom_line(aes(group = id, col = id), alpha = 0.5) +
+  labs(x = "penalty", y = "Number of retained predictors",
+       title = paste("mixture = ", params$mixture, "and", params$num_terms, "features")) +
+  scale_x_log10() +
+  theme(legend.position = "none")
+
+
+```
+
+이러한 결과는 더 많은 최적화가 수행된 경우 `penalty` 범위 선택을 안내하는 데 도움이 될 수 있습니다.  
+
+<br>  
+
+**END**
